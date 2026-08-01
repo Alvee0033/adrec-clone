@@ -26,6 +26,10 @@ export class AdminService implements OnModuleInit {
     return this.adminRepository.findOne({ where: { username } });
   }
 
+  async findById(id: number): Promise<Admin | null> {
+    return this.adminRepository.findOne({ where: { id } });
+  }
+
   async findByToken(token: string): Promise<Admin | null> {
     return this.adminRepository.findOne({ where: { token } });
   }

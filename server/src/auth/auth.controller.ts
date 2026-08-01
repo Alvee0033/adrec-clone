@@ -14,13 +14,18 @@ export class AuthController {
     const admin = await this.adminService.findByUsername(username);
     
     if (admin && admin.password === password) {
-      const token = crypto.randomBytes(16).toString('hex');
+      const SECRET_KEY = process.env.JWT_SECRET || 'adrec-clone-super-secret-key-12345';
+      const expiresAt = Date.now() + 3600000 * 24 * 30; // 30 days
+      const payload = `${admin.id}.${admin.username}.${expiresAt}`;
+      const signature = crypto.createHmac('sha256', SECRET_KEY + admin.password).update(payload).digest('hex');
+      const token = Buffer.from(`${payload}.${signature}`).toString('base64url');
+      
       await this.adminService.updateToken(admin.id, token);
       
       res.cookie('admin_token', token, {
         httpOnly: true,
         secure: false,
-        maxAge: 3600000 * 24,
+        maxAge: 3600000 * 24 * 30, // 30 days
       });
       return { token };
     } else {
