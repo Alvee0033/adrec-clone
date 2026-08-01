@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnBackToList')?.addEventListener('click', showListView);
   document.getElementById('btnCancelForm')?.addEventListener('click', showListView);
   document.getElementById('menuSettingsBtn')?.addEventListener('click', showSettingsView);
+  document.getElementById('dockSettingsBtn')?.addEventListener('click', showSettingsView);
   document.getElementById('btnBackFromSettings')?.addEventListener('click', showListView);
   document.getElementById('btnCancelSettings')?.addEventListener('click', showListView);
   document.getElementById('menuContractsBtn')?.addEventListener('click', showListView);
@@ -532,6 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // set active menu item
     document.querySelectorAll('.sidebar-btn').forEach((b) => b.classList.remove('active'));
     document.getElementById('menuSettingsBtn')?.classList.add('active');
+    document.querySelectorAll('.dock-btn').forEach((b) => b.classList.remove('active'));
+    document.getElementById('dockSettingsBtn')?.classList.add('active');
     // populate current username
     try {
       const res = await fetch('/api/admin/me', { headers: authHeaders() });
@@ -748,6 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsView) settingsView.style.display = 'none';
     contractFormView.style.display = 'none';
     contractsListView.style.display = 'block';
+    document.querySelectorAll('.dock-btn').forEach((b) => b.classList.remove('active'));
     document.getElementById('dockContractsBtn')?.classList.add('active');
     // set sidebar active to contracts
     document.querySelectorAll('.sidebar-btn').forEach((b) => b.classList.remove('active'));
