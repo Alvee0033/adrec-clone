@@ -79,9 +79,22 @@ export class ContractsController {
   @UseGuards(AuthGuard)
   @Delete(':id')
   async deleteContract(@Param('id') id: string) {
-    const deleted = await this.contractsService.delete(id);
-    if (!deleted) throw new NotFoundException('Contract not found');
-    return { success: true, message: 'Contract deleted successfully' };
+    try {
+      const pdfPath = path.join(process.cwd(), 'data', 'pdfs', `${id}.pdf`);
+      if (fs.existsSync(pdfPath)) {
+        try {
+          fs.unlinkSync(pdfPath);
+        } catch (fileErr) {
+          console.error(`Failed to delete PDF file for contract ${id}:`, fileErr);
+        }
+      }
+      const deleted = await this.contractsService.delete(id);
+      if (!deleted) throw new NotFoundException('Contract not found');
+      return { success: true, message: 'Contract deleted successfully' };
+    } catch (err) {
+      console.error(`ERROR DELETING CONTRACT ${id}:`, err);
+      throw err;
+    }
   }
 
   @UseGuards(AuthGuard)
