@@ -119,14 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
   document.getElementById('dockLogoutBtn')?.addEventListener('click', handleLogout);
-  document.getElementById('dockContractsBtn')?.addEventListener('click', showListView);
-  document.getElementById('btnBackToList')?.addEventListener('click', showListView);
-  document.getElementById('btnCancelForm')?.addEventListener('click', showListView);
-  document.getElementById('menuSettingsBtn')?.addEventListener('click', showSettingsView);
-  document.getElementById('dockSettingsBtn')?.addEventListener('click', showSettingsView);
-  document.getElementById('btnBackFromSettings')?.addEventListener('click', showListView);
-  document.getElementById('btnCancelSettings')?.addEventListener('click', showListView);
-  document.getElementById('menuContractsBtn')?.addEventListener('click', showListView);
+  document.getElementById('dockContractsBtn')?.addEventListener('click', () => { window.location.hash = '#/contracts'; });
+  document.getElementById('btnBackToList')?.addEventListener('click', () => { window.location.hash = '#/contracts'; });
+  document.getElementById('btnCancelForm')?.addEventListener('click', () => { window.location.hash = '#/contracts'; });
+  document.getElementById('menuSettingsBtn')?.addEventListener('click', () => { window.location.hash = '#/settings'; });
+  document.getElementById('dockSettingsBtn')?.addEventListener('click', () => { window.location.hash = '#/settings'; });
+  document.getElementById('btnBackFromSettings')?.addEventListener('click', () => { window.location.hash = '#/contracts'; });
+  document.getElementById('btnCancelSettings')?.addEventListener('click', () => { window.location.hash = '#/contracts'; });
+  document.getElementById('menuContractsBtn')?.addEventListener('click', () => { window.location.hash = '#/contracts'; });
 
   document.getElementById('contractSearchInput')?.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
@@ -247,35 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btnCreateContract')?.addEventListener('click', () => {
-    isCreatingMode = true;
-    clearPendingPdf();
-    formTitle.textContent = 'Register New Tenancy Contract';
-    cNumberInput.readOnly = false;
-    cNumberInput.value = '';
-    contractForm.reset();
-
-    document.getElementById('c_issueDate').valueAsDate = new Date();
-    const start = new Date();
-    document.getElementById('c_startDate').valueAsDate = start;
-    const end = new Date();
-    end.setFullYear(end.getFullYear() + 1);
-    document.getElementById('c_endDate').valueAsDate = end;
-
-    document.getElementById('c_type').value = 'Residential';
-    document.getElementById('c_term').value = '1 Year';
-    document.getElementById('c_payments').value = '1';
-    document.getElementById('c_occupants').value = '1';
-    document.getElementById('p_municipality').value = 'Abu Dhabi City';
-    document.getElementById('p_type').value = 'BUILDING';
-    document.getElementById('u_rooms').value = '2';
-    document.getElementById('u_type').value = 'APARTMENT';
-
-    setPdfDownloadVisible(false);
-    hidePdfPreview();
-    document.getElementById('btnDeleteContract').style.display = 'none';
-    document.getElementById('lblOcrFormUpload').style.display = 'inline-flex';
-
-    showFormView();
+    window.location.hash = '#/contracts/new';
   });
 
   async function loadContractsList() {
@@ -398,7 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.querySelectorAll('.btn-tb-edit, .btn-tb-view').forEach((btn) => {
-      btn.addEventListener('click', (e) => openEditForm(e.currentTarget.dataset.id));
+      btn.addEventListener('click', (e) => {
+        window.location.hash = `#/contracts/edit/${e.currentTarget.dataset.id}`;
+      });
     });
 
     document.querySelectorAll('.row-select').forEach((box) => {
@@ -548,28 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function openEditForm(number) {
-    isCreatingMode = false;
-    clearPendingPdf();
-    const c = contractsCache[number];
-    if (!c) return;
-
-    formTitle.textContent = `Contract #${c.number}`;
-    cNumberInput.value = c.number;
-    cNumberInput.readOnly = true;
-    fillFormFromFields(c, { preserveNumber: true });
-
-    setPdfDownloadVisible(true, c.number);
-    showPdfPreview(
-      `/api/contracts/${c.number}/pdf?t=${Date.now()}`,
-      'Stored contract PDF',
-      '#6B7280'
-    );
-
-    document.getElementById('lblOcrFormUpload').style.display = 'inline-flex';
-    document.getElementById('btnDeleteContract').style.display = 'inline-flex';
-    showFormView();
-  }
+  // openEditForm is now handled dynamically by handleRouting
 
   document.getElementById('btnDeleteContract')?.addEventListener('click', async () => {
     const number = cNumberInput.value.trim();
@@ -583,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (res.ok) {
         await loadContractsList();
-        showListView();
+        window.location.hash = '#/contracts';
       } else {
         const errResult = await res.json().catch(() => ({}));
         alert(`Failed to delete: ${errResult.error || 'Server error'}`);
@@ -728,13 +681,13 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error(uploadErr);
           alert(`Contract saved, but PDF upload failed: ${uploadErr.message}`);
           await loadContractsList();
-          showListView();
+          window.location.hash = '#/contracts';
           return;
         }
       }
 
       await loadContractsList();
-      showListView();
+      window.location.hash = '#/contracts';
     } catch (err) {
       console.error(err);
       alert('Network error trying to save contract.');
@@ -834,5 +787,83 @@ document.addEventListener('DOMContentLoaded', () => {
     setSidebarActiveToContracts();
   };
 
-  loadContractsList();
+  async function handleRouting() {
+    const hash = window.location.hash;
+
+    // Ensure list is loaded first so we have the cache populated
+    if (Object.keys(contractsCache).length === 0) {
+      await loadContractsList();
+    }
+
+    if (hash === '#/settings') {
+      showSettingsView();
+    } else if (hash === '#/contracts/new') {
+      isCreatingMode = true;
+      clearPendingPdf();
+      formTitle.textContent = 'Register New Tenancy Contract';
+      cNumberInput.readOnly = false;
+      cNumberInput.value = '';
+      contractForm.reset();
+
+      document.getElementById('c_issueDate').valueAsDate = new Date();
+      const start = new Date();
+      document.getElementById('c_startDate').valueAsDate = start;
+      const end = new Date();
+      end.setFullYear(end.getFullYear() + 1);
+      document.getElementById('c_endDate').valueAsDate = end;
+
+      document.getElementById('c_type').value = 'Residential';
+      document.getElementById('c_term').value = '1 Year';
+      document.getElementById('c_payments').value = '1';
+      document.getElementById('c_occupants').value = '1';
+      document.getElementById('p_municipality').value = 'Abu Dhabi City';
+      document.getElementById('p_type').value = 'BUILDING';
+      document.getElementById('u_rooms').value = '2';
+      document.getElementById('u_type').value = 'APARTMENT';
+
+      setPdfDownloadVisible(false);
+      hidePdfPreview();
+      document.getElementById('btnDeleteContract').style.display = 'none';
+      document.getElementById('lblOcrFormUpload').style.display = 'inline-flex';
+
+      showFormView();
+    } else if (hash.startsWith('#/contracts/edit/')) {
+      const number = hash.replace('#/contracts/edit/', '');
+      isCreatingMode = false;
+      clearPendingPdf();
+      const c = contractsCache[number];
+      if (!c) {
+        window.location.hash = '#/contracts';
+        return;
+      }
+
+      formTitle.textContent = `Contract #${c.number}`;
+      cNumberInput.value = c.number;
+      cNumberInput.readOnly = true;
+      fillFormFromFields(c, { preserveNumber: true });
+
+      setPdfDownloadVisible(true, c.number);
+      showPdfPreview(
+        `/api/contracts/${c.number}/pdf?t=${Date.now()}`,
+        'Stored contract PDF',
+        '#6B7280'
+      );
+
+      document.getElementById('lblOcrFormUpload').style.display = 'inline-flex';
+      document.getElementById('btnDeleteContract').style.display = 'inline-flex';
+      showFormView();
+    } else {
+      showListView();
+    }
+  }
+
+  window.addEventListener('hashchange', handleRouting);
+
+  if (!window.location.hash) {
+    window.location.hash = '#/contracts';
+  }
+
+  loadContractsList().then(() => {
+    handleRouting();
+  });
 });
