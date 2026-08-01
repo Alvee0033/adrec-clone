@@ -7,6 +7,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   app.enableCors({ origin: true, credentials: true });
+  app.use((req: any, res: any, next: any) => {
+    if (req.headers['x-forwarded-proto'] === 'http') {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
   app.use(express.json({ limit: '15mb' }));
   app.use(cookieParser());
   
