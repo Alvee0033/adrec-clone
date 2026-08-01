@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/src/styles/verify.css" />
   <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
   <script type="module" src="/src/js/main.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -166,136 +167,10 @@
           </div>
         </div>
 
-        <!-- Captcha Replica -->
+        <!-- Captcha -->
         <div class="captcha-container" id="captchaContainer" style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1.5rem;">
-          <div id="rc-replica" class="rc-anchor-light">
-            <div class="rc-anchor-content">
-              <div class="rc-inline-block">
-                <div class="rc-checkbox" id="rc-checkbox">
-                  <div class="rc-spinner" id="rc-spinner" style="display: none;"></div>
-                  <div class="rc-checkmark" id="rc-checkmark" style="display: none;">
-                    <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                  </div>
-                </div>
-              </div>
-              <div class="rc-inline-block rc-label">
-                I'm not a robot
-              </div>
-            </div>
-            <div class="rc-anchor-normal-footer">
-              <div class="rc-logo">
-                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA">
-                <div class="rc-logo-text">reCAPTCHA</div>
-              </div>
-              <div class="rc-pt">
-                <a href="#">Privacy</a> - <a href="#">Terms</a>
-              </div>
-            </div>
-          </div>
+          <div class="g-recaptcha" data-sitekey="6LeAmXAtAAAAANra-kOMMtZM1zWWRHtK2aXDUe1L"></div>
         </div>
-        
-        <style>
-          .rc-anchor-light {
-            background: #f9f9f9;
-            border: 1px solid #d3d3d3;
-            border-radius: 3px;
-            box-shadow: 0px 0px 4px 1px rgba(0,0,0,0.08);
-            width: 304px;
-            height: 78px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-family: Roboto, helvetica, arial, sans-serif;
-            box-sizing: border-box;
-            padding: 0 12px;
-            cursor: pointer;
-            user-select: none;
-          }
-          .rc-anchor-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-          }
-          .rc-checkbox {
-            width: 28px;
-            height: 28px;
-            background: #fff;
-            border: 2px solid #c1c1c1;
-            border-radius: 2px;
-            position: relative;
-            transition: all 0.2s;
-          }
-          .rc-anchor-light:hover .rc-checkbox {
-            border-color: #b2b2b2;
-          }
-          .rc-label {
-            font-size: 14px;
-            color: #555;
-            font-weight: 400;
-          }
-          .rc-anchor-normal-footer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 2px;
-          }
-          .rc-logo img {
-            width: 32px;
-            margin-bottom: 2px;
-          }
-          .rc-logo {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          .rc-logo-text {
-            font-size: 10px;
-            color: #555;
-          }
-          .rc-pt {
-            font-size: 8px;
-            color: #555;
-          }
-          .rc-pt a {
-            color: #555;
-            text-decoration: none;
-          }
-          .rc-pt a:hover {
-            text-decoration: underline;
-          }
-          /* Animations */
-          .rc-spinner {
-            width: 28px;
-            height: 28px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4A90E2;
-            border-radius: 50%;
-            animation: rc-spin 1s linear infinite;
-            position: absolute;
-            top: -2px; left: -2px;
-            box-sizing: border-box;
-          }
-          @keyframes rc-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          .rc-checkmark {
-            position: absolute;
-            top: 0; left: 0;
-            width: 24px; height: 24px;
-            display: flex; align-items: center; justify-content: center;
-          }
-          .rc-checkmark svg {
-            width: 20px; height: 20px;
-            fill: #009E5F;
-            animation: rc-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-          }
-          @keyframes rc-pop {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
-          }
-        </style>
 
         <!-- Verification Success Container (Initially Hidden) -->
         <div class="verify-success-card" id="verifySuccessCard" style="display: none;">
@@ -403,36 +278,6 @@
           const verifySuccessCard = document.getElementById('verifySuccessCard');
           const verifyBtn = document.querySelector('.btn-verify-submit');
           const contractInput = document.querySelector('.verify-input');
-          const rcReplica = document.getElementById('rc-replica');
-          const rcCheckbox = document.getElementById('rc-checkbox');
-          const rcSpinner = document.getElementById('rc-spinner');
-          const rcCheckmark = document.getElementById('rc-checkmark');
-          
-          let rcVerified = false;
-          
-          if (rcReplica) {
-            rcReplica.addEventListener('click', () => {
-              if (rcVerified) return;
-              rcCheckbox.style.border = 'none';
-              rcCheckbox.style.background = 'transparent';
-              rcSpinner.style.display = 'block';
-              
-              // Simulate network delay
-              setTimeout(() => {
-                rcSpinner.style.display = 'none';
-                rcCheckmark.style.display = 'flex';
-                rcVerified = true;
-              }, 800);
-            });
-          }
-          
-          function resetRcReplica() {
-            rcVerified = false;
-            rcCheckbox.style.border = '2px solid #c1c1c1';
-            rcCheckbox.style.background = '#fff';
-            rcSpinner.style.display = 'none';
-            rcCheckmark.style.display = 'none';
-          }
           
           if (verifyBtn && verifySuccessCard) {
             // Create a premium loading overlay
@@ -529,7 +374,8 @@
                 alert('Please enter a contract number');
                 return;
               }
-              if (!rcVerified) {
+              const captchaResponse = grecaptcha.getResponse();
+              if (!captchaResponse) {
                 alert('Please complete the Captcha to proceed');
                 return;
               }
@@ -606,7 +452,7 @@
             if (anotherBtn) {
               anotherBtn.addEventListener('click', () => {
                 contractInput.value = '';
-                resetRcReplica();
+                grecaptcha.reset();
                 
                 verifyFormCard.style.display = 'block';
                 captchaContainer.style.display = 'block';
@@ -619,7 +465,7 @@
             if (denyRetryBtn) {
               denyRetryBtn.addEventListener('click', () => {
                 contractInput.value = '';
-                resetRcReplica();
+                grecaptcha.reset();
                 
                 verifyFormCard.style.display = 'block';
                 captchaContainer.style.display = 'block';
