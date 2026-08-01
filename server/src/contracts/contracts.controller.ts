@@ -106,13 +106,16 @@ export class ContractsController {
   @Get(':id/pdf')
   async getPdf(@Param('id') id: string, @Res() res: Response) {
     const filePath = path.join(process.cwd(), 'data', 'pdfs', `${id}.pdf`);
-    const fallbackPath = path.join(process.cwd(), '..', 'public', 'assets', 'templates', 'blank_template.pdf');
+    const fallbackDistPath = path.join(process.cwd(), '..', 'dist', 'assets', 'templates', 'blank_template.pdf');
+    const fallbackPubPath = path.join(process.cwd(), '..', 'public', 'assets', 'templates', 'blank_template.pdf');
     
     let target = null;
     if (fs.existsSync(filePath)) {
       target = filePath;
-    } else if (fs.existsSync(fallbackPath)) {
-      target = fallbackPath;
+    } else if (fs.existsSync(fallbackDistPath)) {
+      target = fallbackDistPath;
+    } else if (fs.existsSync(fallbackPubPath)) {
+      target = fallbackPubPath;
     }
 
     if (!target) {
