@@ -1,0 +1,13 @@
+.vercel
+node_modules/
+dist/
+.DS_Store
+scratch/ocr-temp/
+scratch/pdf-dev/
+scratch/references/
+data/temp_*.pdf
+data/temp_page_*.png
+*.ppm
+.env
+.env.*
+.env*

@@ -1,0 +1,58 @@
+Created At: 2026-08-01T13:29:23Z
+Completed At: 2026-08-01T13:29:23Z
+File Path: `file:///home/alvee/Desktop/clone%20site/scratch/recovered_raw_code.txt`
+Total Lines: 59
+Total Bytes: 4120
+Showing lines 1 to 59
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: Created At: 2026-08-01T13:29:03Z
+2: Completed At: 2026-08-01T13:29:04Z
+3: 
+4: 				The command completed successfully.
+5: 				Output:
+6: 				<truncated 137 lines>
+7: s.propertyName =') && line.includes('fields.tenantNationality\n = tenantSecMatch
+8: ')) {\\\\n    const parsed = JSON.parse(line);\\\\n    console.log(\nparsed.cont
+9: ent || JSON.stringify(parsed));\\\\n  }\\\\n}\\\\n\\\\\\\"\\\"\",\"Cwd\":\"\\\"/
+10: home/al\nvee/Desktop/clone site\\\"\",\"WaitMsBeforeAsync\":\"5000\",\"toolActio
+11: n\":\"\\\"Search for\nthe final ocr-extract script body revision containing the
+12: precise regexes\\\"\",\"to\nolSummary\":\"\\\"Find final ocr-extract cod\nINDEX:
+13:  2811 LENGTH: 1072\n{\"step_index\":2735,\"source\":\"MODEL\",\"type\":\"PLANNER
+14: _RESPONSE\",\"status\":\"DONE\",\"c\nreated_at\":\"2026-07-31T23:30:05Z\",\"tool
+15: _calls\":[{\"name\":\"run_command\",\"args\":{\"C\nommandLine\":\"\\\"node -e \\
+16: \\\\\"\\\\nconst fs = require('fs');\\\\nconst file = '/home/al\nvee/.gemini/ant
+17: igravity/brain/1866bdb0-ff37-4506-8b0b-116cb11adfa8/.system_gener\nated/logs/tra
+18: nscript.jsonl';\\\\nconst content = fs.readFileSync(file, 'utf8');\\\\n\nconst l
+19: ines = content.split('\\\\\\\\n');\\\n<truncated 247 bytes>\n:2736,\"source\":\"
+20: MODEL\",\"type\":\"RUN_COMMAND\",\"status\":\"DONE\",\"create\nd_at\":\"2026-07-
+21: 31T23:30:06Z\",\"content\":\"Created At: 2026-07-31T23:30:06Z\\nComple\nted At:
+22: 2026-07-31T23:30:07Z\\n\\n\\t\\t\\t\\tThe command completed successfully.\\n\\t\
+23: \\nt\\t\\tOutput:\\n\\t\\t\\t\\tFound matches count: 1\\n[{\\\"name\\\":\\
+<truncated 784 bytes>
+home/alvee/.gemini/antigravity/br
+35: ain/1866bdb0-ff37-450\\n6-8b0b-116c\nb11adfa8/.system_generated/logs/transcript.
+36: jsonl';\\\\\\\\nconst content =\\nfs.readF\nileSync(file, 'utf8');\\\\\\\\nconst
+37:  lines = content.split('\\\\\\\\\\\\\\\\n');\\\\\\\\nfor (co\n\\nnst line of lin
+38: es) {\\\\\\\\n  if (line.includes('extractContractFields') && line.\nincl\\nudes
+39: ('fields.tenantEmail =') && line.includes('fields.propertyName =') &&\nline.i\\n
+40: ncludes('fields.tenantNationality = tenantSecMatch')) {\\\\\\\\n    const pa\nrs
+41: ed = JSO\\nN.parse(line);\\\\\\\\n    console.log(parsed.content || JSON.stringi
+42: fy(\nparsed));\\\\\\\\n\\n}\\\\\\\\n}\\\\\\\\n\\\\\\\\\\\\\\\"\\\\\\\"\nINDEX: 2
+43: 813 LENGTH: 977\n{\"step_index\":2737,\"source\":\"MODEL\",\"type\":\"PLANNER_RE
+44: SPONSE\",\"status\":\"DONE\",\"c\nreated_at\":\"2026-07-31T23:30:07Z\",\"tool_ca
+45: lls\":[{\"name\":\"run_command\",\"args\":{\"C\nommandLine\":\"\\\"node -e \\\\\
+46: \\"\\\\nconst fs = require('fs');\\\\nconst file = '/home/al\nvee/.gemini/antigr
+47: avity/brain/1866bdb0-ff37-4506-8b0b-116cb11adfa8/.system_gener\nated/logs/transc
+48: ript.jsonl';\\\\nconst content = fs.readFileSync(file, 'utf8');\\\\n\nconst line
+49: s = content.split('\\\\\\\\n');\\\\nfor (const line of lines) {\\\\n  if (line\n
+50: .includes('extractContractFields') && line.includes('tenantSecMatch') && line.in
+51: \ncludes('function extractContractFields')) {\\\\n    const parsed = JSON.parse(
+52: line\n);\\\\n    console.log(parsed.content || JSON.stringify(parsed.tool_calls
+53: || parse\nd));\\\\n  }\\\\n}\\\\n\\\\\\\"\\\"\",\"Cwd\":\"\\\"/home/alvee/Deskto
+54: p/clone site\\\"\",\"WaitMsBefor\neAsync\":\"5000\",\"toolAction\":\"\\\"Search
+55: for ocr-extract functions that contain ten\nantSecMatch and fu\nantSecMatch an\n
+56: antSecMatch\nantSecMatch and function definition in logs\\\"\",\"toolSummary\":\
+57: "\\\"Find ocr-extract\n functions\\\"\"}}]}\n\n"}
+58: 
+59: 
+The above content shows the entire, complete file contents of the requested file.

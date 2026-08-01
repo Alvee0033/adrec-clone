@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Abu Dhabi Real Estate Centre (ADREC) – Transforming Abu Dhabi's real estate sector. Access over 50 services, market data, regulations and more." />
+  <meta name="keywords" content="Abu Dhabi Real Estate, ADREC, property, rent, buy, real estate services, Abu Dhabi" />
+  <title>Abu Dhabi Real Estate Centre | ADREC</title>
+  <link rel="stylesheet" href="/src/styles/style.css" />
+  <link rel="stylesheet" href="/src/styles/media.css" />
+  <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
+  <script type="module" src="/src/js/main.js"></script>
+</head>
+<body>
+
+  <!-- ===========================
+       HEADER
+       =========================== -->
+  <header class="site-header" role="banner">
+    <div class="container">
+      <div class="header-inner">
+
+        <!-- Logo -->
+        <a href="/" class="site-logo" aria-label="Abu Dhabi Real Estate Centre – Home">
+          <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre Logo" width="160" height="54" />
+        </a>
+
+        <!-- Main Navigation -->
+        <nav class="main-nav" aria-label="Primary navigation">
+          <ul>
+            <li class="nav-item">
+              <a href="/" class="nav-link" id="nav-home">Home</a>
+            </li>
+            <li class="nav-item">
+              <a href="/services.html" class="nav-link" id="nav-services">Services</a>
+            </li>
+            <li class="nav-item">
+              <a href="/sectors.html" class="nav-link" id="nav-sectors">Sectors</a>
+            </li>
+            <li class="nav-item">
+              <a href="/market-data.html" class="nav-link" id="nav-market">Market Data</a>
+            </li>
+            <li class="nav-item">
+              <a href="/rules-and-regulations.html" class="nav-link" id="nav-rules">Rules and Regulations</a>
+            </li>
+            <li class="nav-item">
+              <a href="/media.html" class="nav-link active" id="nav-media">Media Centre</a>
+            </li>
+            <li class="nav-item">
+              <a href="/directory.html" class="nav-link" id="nav-directory">Directory</a>
+            </li>
+            <li class="nav-item">
+              <a href="/contact.html" class="nav-link" id="nav-contact">Contact Us</a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="header-actions" role="toolbar" aria-label="Site utilities">
+          <a href="/verify.html" class="btn-verify" id="verifyDocBtn" aria-label="Verify Document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            Verify Document
+          </a>
+
+          <button class="icon-btn" id="searchBtn" aria-label="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+
+          <button class="icon-btn" id="darkModeBtn" aria-label="Toggle dark mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+
+          <button class="font-btn" id="fontSizeBtn" aria-label="Adjust font size">Aa</button>
+
+          <button class="lang-btn" id="langBtn" aria-label="Switch language">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </button>
+
+          <button class="hamburger-btn" id="menuBtn" aria-label="Open menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ===========================
+       SEARCH OVERLAY
+       =========================== -->
+  <div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="search-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="search" id="searchInput" placeholder="Search services, regulations, market data…" aria-label="Search" />
+      <button id="searchClose" aria-label="Close search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <main id="main-content">
+      <!-- Media Centre Banner -->
+      <section class="services-banner">
+        <div class="services-banner-content">
+          <h1>Media Centre</h1>
+          <p>Explore the latest news, videos, events, and updates on real estate developments, property markets, and companies in Abu Dhabi.</p>
+        </div>
+        <div class="services-banner-image"></div>
+      </section>
+
+      <!-- Media Centre News Section -->
+      <section class="media-main-section">
+        <div class="media-section-header">
+          <h2>Latest News</h2>
+          <a href="#" class="view-more-link">
+            View More
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </a>
+        </div>
+
+        <div class="media-grid">
+          <!-- Card 1: Transactions AED117 Billion -->
+          <article class="news-card card-wide">
+            <div class="news-card-image" style="background-image: url('/assets/images/abu_dhabi_skyscrapers.png');"></div>
+            <div class="news-card-content">
+              <h3>Abu Dhabi Real Estate Transactions Reach AED117 Billion in H1 2026 as Foreign Direct Investment Grows 309%</h3>
+              <p>Abu Dhabi, 17 July 2026 – The Abu Dhabi Real Estate Centre (ADREC), the custodian and regulator of Abu Dhabi's real estate sector, announced that total real estate transactions in the emirate reached AED117 billion during the first half of 2026. According to ADREC's verified official market data, transaction value increased by 112% and transaction volume rose by 61.7% compared with the same period last year.</p>
+              <div class="news-card-footer">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  4 min read
+                </span>
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  03 Jun 2026
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 2: Rental Cap Update -->
+          <article class="news-card card-medium">
+            <div class="news-card-image" style="background-image: url('/assets/images/news_balconies.png');"></div>
+            <div class="news-card-content">
+              <h3>Temporary update to Annual Rental Cap Increase in Abu Dhabi</h3>
+              <p>All residential, commercial, and industrial tenancy contract renewals to be processed at a 0% increase for the duration of the measure.</p>
+              <div class="news-card-footer">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  3 min read
+                </span>
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  03 Jun 2026
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 3: Eight Weeks Activity -->
+          <article class="news-card card-small">
+            <div class="news-card-image" style="background-image: url('/assets/images/news_hazy_city.png');"></div>
+            <div class="news-card-content">
+              <h3>Abu Dhabi Real Estate Activity Over Past Eight Weeks</h3>
+              <p>Residential unit sales across March and April stable, with April exceeding 3,200 residential units sold and AED 13 billion in sales value.<br>Ready residential unit sales remained aligned with recent historical norms, with March variation followed by consistent activity in April.<br>Listing price trends reflected limited pricing adjustments, with ~90% of listings unchanged or increased and adjustments remaining modest in scale.<br>Active leases continue to grow week on week throughout 2026.</p>
+              <div class="news-card-footer">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  3 min read
+                </span>
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  04 May 2026
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 4: Q1 2026 AED 66 Billion Growth -->
+          <article class="news-card card-small">
+            <div class="news-card-image" style="background-image: url('/assets/images/news_night.png');"></div>
+            <div class="news-card-content">
+              <h3>Abu Dhabi Real Estate Centre reports 160.7% growth in transactions to AED 66 billion in Q1 2026, the highest quarterly...</h3>
+              <ul class="bullet-list">
+                <li>Total transactions reached AED 66 billion across 13,518 transactions</li>
+                <li>Sales and purchases drove the majority of activity, totaling AE...</li>
+              </ul>
+              <div class="news-card-footer">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  3 min read
+                </span>
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  13 Apr 2026
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 5: DMT Regulatory Decisions -->
+          <article class="news-card card-small">
+            <div class="news-card-image" style="background-image: url('/assets/images/news_portrait.png');"></div>
+            <div class="news-card-content">
+              <h3>Department of Municipalities and Transport issues regulatory decisions to enhance transparency and governance...</h3>
+              <ul class="bullet-list">
+                <li>Four administrative decisions issued to implement provisions of Law No. (3) of 2015 in Abu Dhabi (as amended), addressing escrow account disbursement controls, jointly owned property...</li>
+              </ul>
+              <div class="news-card-footer">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  3 min read
+                </span>
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  13 Apr 2026
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+  </main>
+
+  <!-- ===========================
+       FOOTER
+       =========================== -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-card">
+        <div class="footer-inner">
+
+          <!-- Brand -->
+          <div class="footer-logo-wrap">
+            <div class="footer-logo">
+              <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre" />
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="footer-nav" aria-label="Footer navigation">
+            <div class="footer-nav-row">
+              <a href="/" id="footer-home">Home</a>
+              <a href="/services.html" id="footer-services">Services</a>
+              <a href="#" id="footer-market">Market Data</a>
+              <a href="#" id="footer-rules">Rules &amp; Regulations</a>
+              <a href="#" id="footer-media">Media Centre</a>
+              <a href="#" id="footer-directory">Directory</a>
+            </div>
+            <div class="footer-nav-row">
+              <a href="#" id="footer-apis">ADREC APIs</a>
+              <a href="#" id="footer-contact">Contact Us</a>
+              <a href="#" id="footer-about">About Us</a>
+              <a href="#" id="footer-faqs">FAQs</a>
+            </div>
+          </nav>
+
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+
+          <div class="footer-social" aria-label="Social media links">
+            <a href="#" class="social-link" id="social-facebook" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-twitter" aria-label="X (Twitter)">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-linkedin" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                <rect x="2" y="9" width="4" height="12"/>
+                <circle cx="4" cy="4" r="2"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-instagram" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-youtube" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+                <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
+              </svg>
+            </a>
+          </div>
+          
+          <div class="footer-legal-wrap">
+            <div class="footer-copy">© 2026 Abu Dhabi Real Estate Centre.</div>
+            <div class="footer-legal">
+              <a href="#" id="footer-privacy">Privacy Policy</a>
+              <span>•</span>
+              <a href="#" id="footer-terms">Terms and Conditions</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+
+  <!-- ===========================
+       MOBILE DRAWER MENU
+       =========================== -->
+  <div class="mobile-drawer" id="mobileDrawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+    <div class="drawer-header">
+      <a href="/" class="drawer-logo" aria-label="Abu Dhabi Real Estate Centre – Home">
+        <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre Logo" width="140" height="47" />
+      </a>
+      <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <nav class="drawer-nav">
+      <ul>
+        <li>
+          <a href="/" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Home
+          </a>
+        </li>
+        <li>
+          <a href="/services.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Services
+          </a>
+        </li>
+        <li>
+          <a href="/sectors.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+            Sectors
+            <svg class="drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+        </li>
+        <li>
+          <a href="/market-data.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            </svg>
+            Market Data
+            <svg class="drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+        </li>
+        <li>
+          <a href="/rules-and-regulations.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Rules and Regulations
+          </a>
+        </li>
+        <li>
+          <a href="/media.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            </svg>
+            Media Centre
+          </a>
+        </li>
+        <li>
+          <a href="/directory.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            </svg>
+            Directory
+          </a>
+        </li>
+        <li>
+          <a href="/contact.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Contact Us
+          </a>
+        </li>
+      </ul>
+
+      <ul class="drawer-settings-list">
+        <li>
+          <button class="drawer-link-btn" id="drawerFontSizeBtn">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7V4h16v3M9 20h6M12 4v16"></path>
+            </svg>
+            Font Size
+            <svg class="drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </li>
+        <li>
+          <div class="drawer-toggle-item">
+            <span class="drawer-toggle-label">
+              <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+              </svg>
+              Dark Mode
+            </span>
+            <label class="switch">
+              <input type="checkbox" id="drawerDarkModeCheckbox" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- ===========================
+       FLOATING CHATBOT WIDGET
+       =========================== -->
+  <button class="chatbot-btn" id="chatbotBtn" aria-label="Open Chat Assistant">
+    <img src="/assets/images/floating-chatbot-icon.gif" alt="Chatbot Icon" />
+  </button>
+
+  <div class="chatbot-modal" id="chatbotModal" role="dialog" aria-modal="true" aria-label="ADREC Chat Assistant">
+    <div class="chatbot-modal-header">
+      <img src="/assets/icons/logo-dark.svg" alt="ADREC Logo" class="chatbot-logo" />
+      <div class="chatbot-header-actions">
+        <button class="chatbot-action-btn" aria-label="Maximize chatbot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+        <button class="chatbot-action-btn close" id="chatbotCloseBtn" aria-label="Close chatbot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="chatbot-modal-body">
+      <div class="chatbot-info-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <p>This ADREC Chatbot provides general information for user convenience and may not always be accurate or complete. For official or verified information, please contact ADREC directly.</p>
+    </div>
+
+    <div class="chatbot-modal-footer">
+      <div class="chatbot-input-wrap">
+        <input type="text" placeholder="Ask a question..." />
+        <button class="chatbot-send-btn" aria-label="Send question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="chatbot-bottom-bar"></div>
+    </div>
+  </div>
+
+</body>
+</html>

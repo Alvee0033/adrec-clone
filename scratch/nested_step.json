@@ -1,0 +1,61 @@
+{
+  "step_index": 2819,
+  "source": "MODEL",
+  "type": "PLANNER_RESPONSE",
+  "status": "DONE",
+  "created_at": "2026-07-31T23:31:23Z",
+  "tool_calls": [
+    {
+      "name": "replace_file_content",
+      "args": {
+        "AllowMultiple": "false",
+        "Description": "\"Integrate the correct recovered ocr-extract script dir
+ectly into the NestJS OcrController for deployment\"",
+        "EndLine": "23",
+        "Instruction": "\"Overwrite extractContractFields function with the comp
+lete recovered parser code from server/lib/ocr-extract.js\"",
+        "ReplacementContent": "\"export function extractContractFields(text: str
+ing) {\\n  const fields: any = {};\\n  const cleanText = text.replace(/\\\\s+/g,
+ ' ');\\n\\n  const contractNoMatch = cleanText.match(/(?:Contract No\\\\.?)\\\\
+s*(\\\\d{12})/i);\\n  fields.number = contractNoMatch ? contractNoMatch[1] : '';
+\\n\\n  const issueDateMatch = cleanText.match(/(?:Issue Date)\\\\s*(\\\\d{4}[-\
+\\\/]\\\\d{2}[-\\\\/]\\\\d{2})/i);\\n  fields.issueDate = issueDateMatch ? issue
+DateMatch[1].replace(/\\\\//g, '-') : '';\\n\\n  const startDateMatch = cleanTex
+t.match(/(?:Start Date)\\\\s*(\\\\d{4}[-\\\\/]\\\\d{2}[-\\\\/]\\\\d{2})/i);\\n
+fields.startDate = startDateMatch ? startDateMatch[1].replace(/\\\\//g, '-') : '
+';\\n\\n  const endDateMatch = cleanText.match(/(?:End Date)\\\\s*(\\\\d{4}[-\\\
+\/]\\\\d{2}[-\\\\/]\\\\d{2})/i);\\n  fields.endDate = endDateMatch ? endDateMatc
+h[1].replace(/\\\\//g, '-') : '';\\n\\n  const annualRentMatch = cleanText.match
+(/(?:Annual Rent)\\\\s*([\\\\d,]+(?:\\\\.\\\\d{2})?)/i);\\n  fields.annualRent =
+ annualRentMatch ? parseFloat(annualRentMatch[1].replace(/,/g, '')) : '';\\n\\n
+ const valueMatch = cleanText.match(/(?:Contract Value)\\\\s*([\\\\d,]+(?:\\\\.\
+\\\d{2})?)/i);\\n  fields.value = valueMatch ? parseFloat(valueMatch[1].replace(
+/,/g, '')) : '';\\n\\n  const typeMatch = cleanText.match(/(?:Contract Type)\\\\
+s*(Residential|Commercial)/i);\\n  fields.type = typeMatch ? typeMatch[1] : 'Res
+idential';\\n\\n  const termMatch = cleanText.match(/(?:Contract Term)\\\\s*(\\\
+\d+\\\\s*\\\\w+)/i);\\n  fields.term = termMatch ? termMatch[1] : '1 Year';\\n\\
+n  const paymentsMatch = cleanText.match(/(?:Number of Payments)\\\\s*(\\\\d+)/i
+);\\n  fields.payments = paymentsMatch ? parseInt(paymentsMatch[1], 10) : 1;\\n\
+\n  const occupantsMatch = cleanText.match(/(?:Number of Occupants)\\\\s*(\\\\d+
+)/i);\\n  fields.occupants = occupantsMatch ? parseInt(occupantsMatch[1], 10) :
+1;\\n\\n  // Tenant Details (Second Party)\\n  // Email Mobile No. Nationality E
+mirates ID No. Full Name\\n  // mahmud1998@gmail.com 971586569774 Bangladesh 784
+199886499468 Pinkon Mahmud Md Riaz Mahmud\\n  const tenantSecMatch = cleanText.m
+atch(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\\n<truncated 3586 bytes>",
+        "StartLine": "12",
+        "TargetContent": "\"function extractContractFields(text: string) {\\n  c
+onst fields = {};\\n\\n  // Extract number, dates, rent etc (based on existing r
+egex/logic from lib/ocr\\n-extract.js if any, but since we don't have it here I
+will mock the basic ones a\\nnd just return text if nothing matched, or copy it
+if I can)\\n\\n  // Actually, I should probably copy the existing lib/ocr-extrac
+t.js logic.\\n  // We'll import it directly.\\n  return fields;\\n}\"",
+        "TargetFile": "\"/home/alvee/Desktop/clone site/server/src/ocr/ocr.contr
+oller.ts\"",
+        "toolAction": "\"Integrate extractContractFields function code details\"
+",
+        "toolSummary": "\"Update ocr.controller.ts\""
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/admin",
+      "destination": "/pages/admin/index.html"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/pages/admin/index.html"
+    },
+    {
+      "source": "/admin.html",
+      "destination": "/pages/admin/index.html"
+    },
+    {
+      "source": "/admin/login",
+      "destination": "/pages/admin/login.html"
+    },
+    {
+      "source": "/admin/login.html",
+      "destination": "/pages/admin/login.html"
+    },
+    {
+      "source": "/admin-login.html",
+      "destination": "/pages/admin/login.html"
+    },
+    {
+      "source": "/services.html",
+      "destination": "/pages/site/services.html"
+    },
+    {
+      "source": "/verify.html",
+      "destination": "/pages/site/verify.html"
+    },
+    {
+      "source": "/sectors.html",
+      "destination": "/pages/site/sectors.html"
+    },
+    {
+      "source": "/market-data.html",
+      "destination": "/pages/site/market-data.html"
+    },
+    {
+      "source": "/rules-and-regulations.html",
+      "destination": "/pages/site/rules-and-regulations.html"
+    },
+    {
+      "source": "/media-centre.html",
+      "destination": "/pages/site/media-centre.html"
+    },
+    {
+      "source": "/media.html",
+      "destination": "/pages/site/media.html"
+    },
+    {
+      "source": "/directory.html",
+      "destination": "/pages/site/directory.html"
+    },
+    {
+      "source": "/contact.html",
+      "destination": "/pages/site/contact.html"
+    },
+    {
+      "source": "/",
+      "destination": "/pages/site/index.html"
+    }
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "memory": 1024,
+      "includeFiles": "server/dist/**"
+    }
+  }
+}

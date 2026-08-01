@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operator Dashboard | ADREC Admin Portal</title>
+  <link rel="stylesheet" href="/src/styles/style.css" />
+  <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
+  <script type="module" src="/src/js/admin.js"></script>
+</head>
+<body>
+
+  <header class="site-header admin-site-header" role="banner">
+    <div class="container">
+      <div class="header-inner admin-header-inner">
+        <div class="admin-brand">
+          <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre Logo" class="admin-nav-logo" />
+          <div class="admin-title-wrap">
+            <span class="admin-app-name">Abu Dhabi Real Estate Centre</span>
+            <span class="admin-portal-tag">Tenancy Registry Portal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="admin-dashboard-section">
+      <div class="dashboard-container">
+        <aside class="dashboard-sidebar">
+          <div class="sidebar-header">
+            <h3>Admin Console</h3>
+            <span class="user-badge">Role: Operator</span>
+          </div>
+          <ul class="sidebar-menu">
+            <li><button type="button" class="sidebar-btn active" id="menuContractsBtn">Tenancy Contracts</button></li>
+            <li><button type="button" class="sidebar-btn" id="menuSettingsBtn">Settings</button></li>
+            <li style="margin-top: auto;"><button type="button" class="sidebar-btn sidebar-btn-logout" id="logoutBtn">Logout</button></li>
+          </ul>
+        </aside>
+
+        <div class="dashboard-panel">
+
+          <!-- List view -->
+          <div id="contractsListView" class="admin-view">
+            <div class="panel-header-flex">
+              <div>
+                <h2>Tenancy Contracts</h2>
+                <p class="panel-subtitle">Search, register, and manage official tenancy records</p>
+              </div>
+              <div class="header-search-wrap">
+                <input type="search" id="contractSearchInput" placeholder="Search by number, tenant, property…" autocomplete="off" />
+              </div>
+              <button type="button" class="btn-primary-action" id="btnCreateContract">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Create New
+              </button>
+            </div>
+
+            <div class="dash-stats">
+              <div class="dash-stat">
+                <span class="dash-stat-label">Total contracts</span>
+                <span class="dash-stat-value" id="statTotal">0</span>
+              </div>
+              <div class="dash-stat">
+                <span class="dash-stat-label">Active now</span>
+                <span class="dash-stat-value" id="statActive">0</span>
+              </div>
+            </div>
+
+            <!-- Selection + bulk actions toolbar -->
+            <div class="list-toolbar" id="listToolbar">
+              <div class="list-toolbar-left">
+                <label class="select-all-wrap">
+                  <input type="checkbox" id="selectAllContracts" />
+                  <span>Select all</span>
+                </label>
+                <span class="selection-count" id="selectionCount">0 selected</span>
+                <button type="button" class="btn-bulk-delete" id="btnBulkDelete" disabled>
+                  Delete selected
+                </button>
+              </div>
+              <div class="list-toolbar-right">
+                <label class="toggle-wrap" title="Schedule auto-delete for selected contracts">
+                  <input type="checkbox" id="autoDeleteToggle" />
+                  <span class="toggle-ui" aria-hidden="true"></span>
+                  <span class="toggle-label">Auto delete</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  id="autoDeleteAtInput"
+                  class="auto-delete-datetime"
+                  disabled
+                  aria-label="Auto delete date and time"
+                />
+                <button type="button" class="btn-secondary-action" id="btnApplyAutoDelete" disabled>
+                  Apply schedule
+                </button>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <table class="contracts-table">
+                <thead>
+                  <tr>
+                    <th class="col-check" scope="col"><span class="sr-only">Select</span></th>
+                    <th>Contract No.</th>
+                    <th>Tenant Name</th>
+                    <th>Emirates ID</th>
+                    <th>Property</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Auto delete</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="contractsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Form view -->
+          <div id="contractFormView" class="admin-view" style="display: none;">
+            <div class="panel-header-flex">
+              <div>
+                <button type="button" class="btn-back" id="btnBackToList">← Back to contracts</button>
+                <h2 id="formTitle" style="margin-top: 8px;">Edit Tenancy Contract</h2>
+              </div>
+              <div class="header-action-group">
+                <label id="lblOcrFormUpload" for="ocr_form_pdf_upload" class="btn-secondary-action" style="display: none;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                  OCR Auto-Fill
+                </label>
+                <input type="file" id="ocr_form_pdf_upload" accept="application/pdf,.pdf" hidden />
+              </div>
+            </div>
+
+            <form id="contractForm" class="contract-form">
+              <div class="form-section">
+                <div class="form-section-title"><span class="section-num">1</span> Contract Details</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="c_number">Contract Number *</label>
+                    <input type="text" id="c_number" required placeholder="e.g. 202401452538" />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_issueDate">Issue Date *</label>
+                    <input type="date" id="c_issueDate" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_startDate">Start Date *</label>
+                    <input type="date" id="c_startDate" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_endDate">End Date *</label>
+                    <input type="date" id="c_endDate" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_annualRent">Annual Rent (AED) *</label>
+                    <input type="number" id="c_annualRent" required placeholder="63000" />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_value">Contract Value (AED) *</label>
+                    <input type="number" id="c_value" required placeholder="63000" />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_type">Contract Type</label>
+                    <select id="c_type">
+                      <option value="Residential">Residential</option>
+                      <option value="Commercial">Commercial</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="c_term">Contract Term</label>
+                    <input type="text" id="c_term" required value="1 Year" />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_payments">Number of Payments</label>
+                    <input type="number" id="c_payments" required value="1" />
+                  </div>
+                  <div class="form-group">
+                    <label for="c_occupants">Number of Occupants</label>
+                    <input type="number" id="c_occupants" required value="1" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"><span class="section-num">2</span> Tenant Details (Second Party)</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="t_name">Tenant Full Name *</label>
+                    <input type="text" id="t_name" required placeholder="Full Name" />
+                  </div>
+                  <div class="form-group">
+                    <label for="t_emiratesId">Emirates ID No. *</label>
+                    <input type="text" id="t_emiratesId" required placeholder="784-1995-8268326-6" />
+                  </div>
+                  <div class="form-group">
+                    <label for="t_nationality">Nationality</label>
+                    <input type="text" id="t_nationality" required placeholder="Pakistan" />
+                  </div>
+                  <div class="form-group">
+                    <label for="t_mobile">Mobile Number</label>
+                    <input type="text" id="t_mobile" required placeholder="971526795995" />
+                  </div>
+                  <div class="form-group">
+                    <label for="t_email">Email Address</label>
+                    <input type="email" id="t_email" required placeholder="email@domain.com" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"><span class="section-num">3</span> Lessor Details (First Party)</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="l_company">Lessor Company Name</label>
+                    <input type="text" id="l_company" required placeholder="Company LLC" />
+                  </div>
+                  <div class="form-group">
+                    <label for="l_license">License No.</label>
+                    <input type="text" id="l_license" required placeholder="CN-1048007" />
+                  </div>
+                  <div class="form-group">
+                    <label for="l_name">Contact Person Full Name</label>
+                    <input type="text" id="l_name" required placeholder="Contact Name" />
+                  </div>
+                  <div class="form-group">
+                    <label for="l_mobile">Contact Person Mobile</label>
+                    <input type="text" id="l_mobile" required placeholder="971588973810" />
+                  </div>
+                  <div class="form-group">
+                    <label for="l_email">Contact Person Email</label>
+                    <input type="email" id="l_email" required placeholder="lessor@domain.com" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"><span class="section-num">4</span> Property &amp; Unit Details</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="p_name">Property Name</label>
+                    <input type="text" id="p_name" required placeholder="Sanad properties" />
+                  </div>
+                  <div class="form-group">
+                    <label for="p_type">Property Type</label>
+                    <input type="text" id="p_type" required value="BUILDING" />
+                  </div>
+                  <div class="form-group">
+                    <label for="p_municipality">Municipality</label>
+                    <input type="text" id="p_municipality" required value="Abu Dhabi City" />
+                  </div>
+                  <div class="form-group">
+                    <label for="p_zone">Zone</label>
+                    <input type="text" id="p_zone" required placeholder="Mohamed Bin Zayed City" />
+                  </div>
+                  <div class="form-group">
+                    <label for="p_sector">Sector</label>
+                    <input type="text" id="p_sector" required placeholder="ME9" />
+                  </div>
+                  <div class="form-group">
+                    <label for="p_plot">Plot Number</label>
+                    <input type="text" id="p_plot" required placeholder="C173" />
+                  </div>
+                  <div class="form-group">
+                    <label for="u_premise">Premise No.</label>
+                    <input type="text" id="u_premise" required placeholder="6391801694" />
+                  </div>
+                  <div class="form-group">
+                    <label for="u_rooms">Number of Rooms</label>
+                    <input type="number" id="u_rooms" required value="2" />
+                  </div>
+                  <div class="form-group">
+                    <label for="u_type">Unit Type</label>
+                    <input type="text" id="u_type" required value="APARTMENT" />
+                  </div>
+                  <div class="form-group">
+                    <label for="u_regNo">Unit Reg No. (Registry)</label>
+                    <input type="text" id="u_regNo" required placeholder="UNT308001" />
+                  </div>
+                  <div class="form-group">
+                    <label for="u_number">Unit Number (Flat/Villa No)</label>
+                    <input type="text" id="u_number" required placeholder="Flat No. 502" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <div class="form-section-title"><span class="section-num">5</span> Contract PDF Document</div>
+                <div class="form-group" style="margin-top: 16px;">
+                  <div id="pdfUploadStatus" class="pdf-upload-status">PDF appears here after OCR or when viewing a saved contract.</div>
+
+                  <div id="pdfPreviewContainer" class="pdf-preview-wrap" hidden style="display: none;">
+                    <span class="pdf-preview-label">Document preview</span>
+                    <div class="pdf-preview-frame">
+                      <button type="button" id="btnEnlargePdf" class="pdf-maximize-btn" title="Maximize preview" aria-label="Maximize PDF preview">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <polyline points="9 21 3 21 3 15"></polyline>
+                          <line x1="21" y1="3" x2="14" y2="10"></line>
+                          <line x1="3" y1="21" x2="10" y2="14"></line>
+                        </svg>
+                      </button>
+                      <iframe id="pdfPreviewIframe" title="Contract PDF preview" src=""></iframe>
+                    </div>
+                  </div>
+
+                  <div class="pdf-download-row" id="pdfDownloadRow" hidden>
+                    <a id="btnDownloadFormPdf" href="#" class="btn-download-pdf" target="_blank" rel="noopener">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Download PDF
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions-bar">
+                <div class="form-actions-inner">
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-cancel" id="btnCancelForm">Cancel</button>
+                    <button type="button" class="btn-danger" id="btnDeleteContract" style="display: none;">Delete Contract</button>
+                  </div>
+                  <button type="submit" class="btn-save-contract">Save &amp; Sync Contract</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Settings view -->
+          <div id="settingsView" class="admin-view" style="display: none;">
+            <div class="panel-header-flex">
+              <div>
+                <button type="button" class="btn-back" id="btnBackFromSettings">← Back</button>
+                <h2 style="margin-top: 8px;">Admin Settings</h2>
+                <p class="panel-subtitle">Change admin username and password</p>
+              </div>
+            </div>
+
+            <form id="adminSettingsForm" class="contract-form" style="max-width:680px;">
+              <div class="form-section">
+                <div class="form-section-title"><span class="section-num">1</span> Account</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="admin_username">Username</label>
+                    <input type="text" id="admin_username" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="admin_role">Role</label>
+                    <select id="admin_role">
+                      <option value="operator" selected>Operator</option>
+                      <option value="admin">Administrator</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="admin_password">New Password</label>
+                    <div style="position:relative; display:flex; gap:8px; align-items:center;">
+                      <input type="password" id="admin_password" required style="flex:1;" />
+                      <button type="button" id="togglePasswordBtn" class="btn-secondary-action" style="padding:8px 10px;">Show</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="admin_password_confirm">Confirm Password</label>
+                    <input type="password" id="admin_password_confirm" required />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions-bar">
+                <div class="form-actions-inner">
+                  <div>
+                    <button type="button" class="btn-cancel" id="btnCancelSettings">Cancel</button>
+                  </div>
+                  <div>
+                    <button type="submit" class="btn-primary-action">Save changes</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="pdfModalOverlay" class="pdf-modal-overlay" role="dialog" aria-modal="true" aria-label="Enlarged PDF preview">
+    <div class="pdf-modal-window">
+      <div class="pdf-modal-header">
+        <h3>Contract PDF Preview</h3>
+        <button type="button" id="btnClosePdfModal" class="pdf-modal-close" aria-label="Close maximized preview">&times;</button>
+      </div>
+      <div id="pdfModalZoomContainer" class="pdf-modal-body">
+        <div id="pdfModalZoomContent" class="pdf-modal-zoom">
+          <iframe id="pdfModalIframe" title="Maximized contract PDF" src=""></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer admin-site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-card">
+        <div class="footer-bottom">
+          <div class="footer-legal-wrap">
+            <span class="footer-copy">© 2026 Abu Dhabi Real Estate Centre — Operator Management Portal. All rights reserved.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="mobile-bottom-dock">
+    <button type="button" class="dock-btn active" id="dockContractsBtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+      <span>Contracts</span>
+    </button>
+    <button type="button" class="dock-btn" id="dockLogoutBtn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+      <span>Logout</span>
+    </button>
+  </div>
+
+</body>
+</html>

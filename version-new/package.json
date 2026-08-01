@@ -1,0 +1,40 @@
+{
+  "name": "adrec-clone",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "cd server && npm run start:dev",
+    "dev:app": "node scripts/dev.mjs",
+    "build": "vite build && cd server && npm ci && npm run build",
+    "preview": "vite preview",
+    "server": "node api/index.js",
+    "start": "node api/index.js",
+    "seed:blob": "node --env-file=.env.local scripts/seed-blob.mjs"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/platform-express": "^11.1.28",
+    "@nestjs/serve-static": "^5.0.5",
+    "@nestjs/typeorm": "^11.0.3",
+    "@vercel/blob": "*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^2.4.5",
+    "pdf-parse-fork": "^1.2.0",
+    "pg": "^8.22.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "tesseract.js": "^7.0.0",
+    "typeorm": "^1.1.0"
+  }
+}

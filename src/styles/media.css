@@ -1,0 +1,232 @@
+/* Media Centre Page Specific Styles */
+.services-banner {
+  display: flex;
+  background-color: #E8F0E6; /* Light green/grey background */
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 40px auto;
+  max-width: 1200px;
+  min-height: 280px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.services-banner-content {
+  flex: 1.2;
+  padding: 50px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 2;
+}
+
+.services-banner-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.services-banner-content p {
+  font-size: 1.05rem;
+  color: #374151;
+  line-height: 1.6;
+  max-width: 90%;
+}
+
+.services-banner-image {
+  flex: 1;
+  background-image: url('/assets/images/media_banner.png');
+  background-size: cover;
+  background-position: center;
+  clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+  position: relative;
+}
+
+.services-banner-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #E8F0E6; /* Match banner background color */
+  clip-path: polygon(15% 0, 16% 0, 1% 100%, 0 100%);
+}
+
+.media-main-section {
+  max-width: 1200px;
+  margin: 60px auto 100px;
+}
+
+.media-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.media-section-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.view-more-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: gap 0.2s;
+}
+
+.view-more-link:hover {
+  gap: 8px;
+}
+
+.view-more-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+}
+
+.news-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.news-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.news-card-image {
+  width: 100%;
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.news-card-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.news-card-content h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.news-card-content p {
+  font-size: 0.9rem;
+  color: #4B5563;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  flex-grow: 1;
+}
+
+.bullet-list {
+  padding-left: 20px;
+  margin-bottom: 24px;
+  flex-grow: 1;
+}
+
+.bullet-list li {
+  font-size: 0.9rem;
+  color: #4B5563;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.news-card-footer {
+  border-top: 1px solid #F3F4F6;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #6B7280;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-item svg {
+  width: 16px;
+  height: 16px;
+  color: #9CA3AF;
+}
+
+/* Wide card sizing (Row 1 left) */
+.card-wide {
+  grid-column: span 7;
+}
+
+/* Medium card sizing (Row 1 right) */
+.card-medium {
+  grid-column: span 5;
+}
+
+/* Small card sizing (Row 2 three columns) */
+.card-small {
+  grid-column: span 4;
+}
+
+@media (max-width: 992px) {
+  .services-banner {
+    flex-direction: column;
+    margin: 0;
+    border-radius: 0;
+    min-height: auto;
+  }
+  .services-banner-image {
+    min-height: 240px;
+    clip-path: none;
+    background-image: none; /* Hide visual on mobile */
+    background-color: #E8F0E6;
+  }
+  .services-banner-image::before {
+    display: none;
+  }
+  .services-banner-content {
+    padding: 40px 24px;
+  }
+  .media-main-section {
+    padding: 0 20px;
+    margin-top: 30px;
+  }
+  .media-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .card-wide, .card-medium, .card-small {
+    grid-column: span 12;
+  }
+  .news-card-image {
+    height: 200px;
+  }
+}

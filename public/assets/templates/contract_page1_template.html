@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tenancy Contract</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
+    background: white;
+    color: #1a1a1a;
+    width: 210mm;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 0;
+    background: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== TOP DECORATIVE STRIPE ===== */
+  .top-stripe {
+    width: 100%;
+    height: 12px;
+    background: linear-gradient(to right, #c0392b 0%, #c0392b 35%, #2c4a8c 35%, #2c4a8c 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .top-stripe::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 33%;
+    width: 5%;
+    height: 100%;
+    background: white;
+    transform: skewX(-20deg);
+  }
+  .top-stripe::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 35%;
+    width: 3%;
+    height: 100%;
+    background: white;
+    transform: skewX(-20deg);
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 18px 8px 18px;
+  }
+
+  .header-left .qr-code {
+    width: 75px;
+    height: 75px;
+    border: 2px solid #333;
+  }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .header-right .dmt-text {
+    text-align: right;
+    direction: rtl;
+  }
+
+  .header-right .dmt-arabic {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    font-family: 'Noto Sans Arabic', Arial;
+    letter-spacing: 1px;
+  }
+
+  .header-right .dmt-english-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-right .dmt-english {
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  .header-right .dmt-seal {
+    width: 50px;
+    height: 50px;
+  }
+
+  /* ===== CONTRACT TITLE ===== */
+  .contract-title {
+    text-align: center;
+    padding: 8px 0 4px 0;
+  }
+
+  .contract-title .arabic-title {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #b5860d;
+    font-family: 'Noto Sans Arabic', Arial;
+    direction: rtl;
+    letter-spacing: 4px;
+  }
+
+  .contract-title .english-title {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-top: 4px;
+  }
+
+  /* ===== TABLES ===== */
+  .section-table {
+    width: calc(100% - 36px);
+    margin: 10px 18px 8px 18px;
+    border-collapse: collapse;
+    border: 1.5px solid #1a1a1a;
+  }
+
+  /* Section header row */
+  .section-header {
+    background: #1a5a6e;
+    color: white;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+
+  .section-header td {
+    padding: 5px 8px;
+    border: none;
+  }
+
+  .section-header .ar {
+    text-align: right;
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+    font-size: 9pt;
+  }
+
+  /* Data rows */
+  .section-table tr {
+    border-bottom: 0.8px solid #1a1a1a;
+  }
+
+  .section-table td {
+    padding: 3px 8px;
+    border-right: 0.8px solid #1a1a1a;
+    vertical-align: middle;
+    height: 18px;
+    font-size: 8.5pt;
+  }
+
+  .section-table td:last-child {
+    border-right: none;
+  }
+
+  /* Label column (always left, English) */
+  .col-label {
+    width: 110px;
+    color: #1a1a1a;
+    font-weight: normal;
+    background: #f0f4f8;
+  }
+
+  /* Value column (center, English value) */
+  .col-value {
+    min-width: 120px;
+    color: #1a1a1a;
+  }
+
+  /* Arabic label column (right-aligned) */
+  .col-ar-label {
+    width: 120px;
+    text-align: right;
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+    font-size: 8pt;
+    color: #1a1a1a;
+    background: #f0f4f8;
+  }
+
+  /* Alternate row shading */
+  .row-shade {
+    background: #f0f4f8;
+  }
+
+  /* ===== LESSOR SECTION HEADER ===== */
+  .party-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 18px 2px 18px;
+    font-size: 10pt;
+    font-weight: bold;
+  }
+  .party-header .ar {
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+    color: #1a1a1a;
+  }
+
+  /* Lessor Details sub-header */
+  .sub-section-header {
+    background: #1a5a6e;
+    color: white;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+
+  /* Lessor 4-column table */
+  .lessor-table {
+    width: calc(100% - 36px);
+    margin: 0 18px 6px 18px;
+    border-collapse: collapse;
+    border: 1.5px solid #1a1a1a;
+  }
+
+  .lessor-table td {
+    padding: 3px 6px;
+    border-right: 0.8px solid #1a1a1a;
+    border-bottom: 0.8px solid #1a1a1a;
+    vertical-align: middle;
+    height: 18px;
+    font-size: 8.5pt;
+    text-align: center;
+  }
+
+  .lessor-table td:last-child { border-right: none; }
+  .lessor-table .col-header-label {
+    font-weight: bold;
+    background: #f0f4f8;
+    font-size: 8pt;
+    text-align: center;
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+  }
+  .lessor-table .col-header-en {
+    font-weight: bold;
+    text-align: center;
+    font-size: 8pt;
+  }
+
+  /* Contact Person sub-table */
+  .contact-table {
+    width: calc(100% - 36px);
+    margin: 0 18px 6px 18px;
+    border-collapse: collapse;
+    border: 1.5px solid #1a1a1a;
+  }
+
+  .contact-table td {
+    padding: 3px 8px;
+    border-right: 0.8px solid #1a1a1a;
+    border-bottom: 0.8px solid #1a1a1a;
+    vertical-align: middle;
+    height: 18px;
+    font-size: 8.5pt;
+  }
+
+  .contact-table td:last-child { border-right: none; }
+  .contact-table .contact-header {
+    background: #dde6ed;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+  .contact-table .contact-ar {
+    text-align: right;
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+    font-size: 8pt;
+    background: #dde6ed;
+    font-weight: bold;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 18px 6px 18px;
+    border-top: 0.8px solid #aaa;
+  }
+
+  .footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .footer-left {
+    flex: 1;
+    font-size: 7pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+  }
+
+  .footer-left a { color: #c00; text-decoration: underline; }
+
+  .footer-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  .footer-center .stamp {
+    width: 70px;
+    height: 70px;
+  }
+
+  .footer-right {
+    flex: 1;
+    font-size: 7pt;
+    line-height: 1.6;
+    text-align: right;
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+    color: #1a1a1a;
+  }
+
+  .footer-right a { color: #c00; text-decoration: underline; }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 4px;
+    font-size: 7.5pt;
+    border-top: 0.5px solid #ccc;
+    margin-top: 4px;
+  }
+
+  .footer-bottom .ar {
+    direction: rtl;
+    font-family: 'Noto Sans Arabic', Arial;
+  }
+
+  /* value cells - blue colored numbers */
+  .val-blue {
+    color: #2563a8;
+  }
+
+  /* ===== PRINT ADJUSTMENTS ===== */
+  @media print {
+    body { width: 210mm; }
+    .page { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- TOP DECORATIVE STRIPE -->
+  <div class="top-stripe"></div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <img src="/assets/templates/qr_code.png" alt="QR Code" class="qr-code" />
+    </div>
+    <div class="header-right">
+      <div class="dmt-text">
+        <div class="dmt-arabic">دائـرة الـبـلـديـات والـنـقـل</div>
+      </div>
+      <div class="dmt-english-block">
+        <div class="dmt-english">DEPARTMENT OF MUNICIPALITIES<br>AND TRANSPORT</div>
+        <img src="/assets/templates/dmt_logo.png" alt="DMT Logo" class="dmt-seal" />
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRACT TITLE -->
+  <div class="contract-title">
+    <div class="arabic-title">عـقـد إيـجـار</div>
+    <div class="english-title">Tenancy Contract</div>
+  </div>
+
+  <!-- CONTRACT DETAILS TABLE -->
+  <table class="section-table">
+    <thead>
+      <tr class="section-header">
+        <td style="width:110px">CONTRACT DETAILS</td>
+        <td></td>
+        <td class="ar" style="width:130px">تفاصيل العقد</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-label">Contract No.</td>
+        <td class="col-value val-blue">{{number}}</td>
+        <td class="col-ar-label">رقم العقد</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">Issue Date</td>
+        <td class="col-value val-blue">{{issueDate}}</td>
+        <td class="col-ar-label">تاريخ الإصدار</td>
+      </tr>
+      <tr>
+        <td class="col-label">Start Date</td>
+        <td class="col-value val-blue">{{startDate}}</td>
+        <td class="col-ar-label">تاريخ البداية</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">End Date</td>
+        <td class="col-value val-blue">{{endDate}}</td>
+        <td class="col-ar-label">تاريخ النهاية</td>
+      </tr>
+      <tr>
+        <td class="col-label">Annual Rent</td>
+        <td class="col-value val-blue">{{annualRent}}</td>
+        <td class="col-ar-label">الإيجار السنوي</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">Contract Value</td>
+        <td class="col-value val-blue">{{value}}</td>
+        <td class="col-ar-label">قيمة العقد</td>
+      </tr>
+      <tr>
+        <td class="col-label">Security Deposit</td>
+        <td class="col-value val-blue">{{deposit}}</td>
+        <td class="col-ar-label">مبلغ التأمين</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">Contract Type</td>
+        <td class="col-value">{{type}} <span class="val-blue" style="float:right;direction:rtl;font-family:'Noto Sans Arabic',Arial">{{typeAr}}</span></td>
+        <td class="col-ar-label">نوع العقد</td>
+      </tr>
+      <tr>
+        <td class="col-label">Grace Period</td>
+        <td class="col-value">— <span style="float:right">—</span></td>
+        <td class="col-ar-label">فترة السماح</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">Contract Term</td>
+        <td class="col-value">{{term}} <span class="val-blue" style="float:right;direction:rtl;font-family:'Noto Sans Arabic',Arial">{{termAr}}</span></td>
+        <td class="col-ar-label">مدة العقد</td>
+      </tr>
+      <tr>
+        <td class="col-label">Payment Method</td>
+        <td class="col-value">Cheque <span class="val-blue" style="float:right;direction:rtl;font-family:'Noto Sans Arabic',Arial">شيكات</span></td>
+        <td class="col-ar-label">طريقة السداد</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">Number of Payments</td>
+        <td class="col-value val-blue">{{payments}}</td>
+        <td class="col-ar-label">عدد الدفعات</td>
+      </tr>
+      <tr>
+        <td class="col-label">Number of Occupants</td>
+        <td class="col-value val-blue">{{occupants}}</td>
+        <td class="col-ar-label">عدد القاطنين</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label">Water &amp; Electricity Bill</td>
+        <td class="col-value">TENANT <span class="val-blue" style="float:right;direction:rtl;font-family:'Noto Sans Arabic',Arial">المستأجر</span></td>
+        <td class="col-ar-label">استهلاك الماء والكهرباء</td>
+      </tr>
+      <tr>
+        <td class="col-label">Pets Allowed</td>
+        <td class="col-value">No <span class="val-blue" style="float:right;direction:rtl;font-family:'Noto Sans Arabic',Arial">لا</span></td>
+        <td class="col-ar-label">السماح بإيواء الحيوانات</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FIRST PARTY (LESSOR) HEADER -->
+  <div class="party-header">
+    <span>FIRST PARTY (LESSOR)</span>
+    <span class="ar">الطرف الأول (المؤجر)</span>
+  </div>
+
+  <!-- LESSOR DETAILS TABLE -->
+  <table class="lessor-table">
+    <thead>
+      <tr class="sub-section-header">
+        <td colspan="4" style="padding:5px 8px;text-align:left">1.&nbsp; LESSOR DETAILS</td>
+        <td style="padding:5px 8px;text-align:right;direction:rtl;font-family:'Noto Sans Arabic',Arial">.1&nbsp; تفاصيل المؤجر</td>
+      </tr>
+      <!-- Arabic column headers -->
+      <tr style="background:#dde6ed">
+        <td class="col-header-label" style="font-size:7.5pt">البريد الإلكتروني</td>
+        <td class="col-header-label" style="font-size:7.5pt">الهاتف المتحرك</td>
+        <td class="col-header-label" style="font-size:7.5pt">رقم الرخصة</td>
+        <td class="col-header-label" colspan="2" style="font-size:7.5pt">اسم الشركة</td>
+      </tr>
+      <!-- English column headers -->
+      <tr style="background:#dde6ed">
+        <td class="col-header-en">Email</td>
+        <td class="col-header-en">Mobile No.</td>
+        <td class="col-header-en">License No.</td>
+        <td class="col-header-en" colspan="2">Company Name</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align:center;font-size:8pt">{{lessorEmail}}</td>
+        <td style="text-align:center;font-size:8pt">{{lessorMobile}}</td>
+        <td style="text-align:center;font-size:8pt">{{lessorLicense}}</td>
+        <td colspan="2" style="text-align:center;font-size:8pt">{{lessorCompany}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- CONTACT PERSON TABLE -->
+  <table class="contact-table">
+    <thead>
+      <tr>
+        <td class="contact-header" colspan="2">Contact Person</td>
+        <td class="contact-ar">المعني بالاتصال</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-label" style="font-weight:normal">Full Name</td>
+        <td style="font-size:8pt">{{lessorName}}</td>
+        <td style="text-align:right;direction:rtl;font-family:'Noto Sans Arabic',Arial;font-size:8pt">الاسم الكامل</td>
+      </tr>
+      <tr class="row-shade">
+        <td class="col-label" style="font-weight:normal">Mobile No.</td>
+        <td style="font-size:8pt">{{lessorMobile}}</td>
+        <td style="text-align:right;direction:rtl;font-family:'Noto Sans Arabic',Arial;font-size:8pt">الهاتف المتحرك</td>
+      </tr>
+      <tr>
+        <td class="col-label" style="font-weight:normal">Email</td>
+        <td style="font-size:8pt">{{lessorEmail}}</td>
+        <td style="text-align:right;direction:rtl;font-family:'Noto Sans Arabic',Arial;font-size:8pt">البريد الإلكتروني</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-content">
+      <div class="footer-left">
+        * This Contract was registered in the <a href="#">(Rental Registry)</a>.<br>
+        * Any deletion, amendment, or addition to the content of this document shall render it null and void.<br>
+        * This contract is electronically generated, and it can be verified via:<br>
+        <a href="https://adrecgovae.com/verify-document">https://adrecgovae.com/verify-document</a>
+      </div>
+      <div class="footer-center">
+        <img src="/assets/templates/dmt_logo.png" alt="DMT Stamp" class="stamp" />
+      </div>
+      <div class="footer-right">
+        تم تسجيل هذا العقد في <a href="#">(سجل الإيجارات)</a>.<br>
+        * أي شطب أو تعديل أو إضافة في محتويات هذا العقد يعتبر لاغياً<br>
+        * حرر هذا العقد إلكترونياً ويمكن التحقق من صحته من خلال الرابط:<br>
+        <a href="https://adrecgovae.com/verify-document">https://adrecgovae.com/verify-document</a>
+        &nbsp;*
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Contract No.: {{number}}&nbsp;&nbsp;&nbsp; رقم العقد</span>
+      <span class="ar">تاريخ العقد &nbsp;&nbsp;&nbsp; Contract Date: {{issueDate}}</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

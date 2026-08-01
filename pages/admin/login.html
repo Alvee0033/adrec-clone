@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operator Login | ADREC Admin Portal</title>
+  <link rel="stylesheet" href="/src/styles/style.css" />
+  <link rel="stylesheet" href="/src/styles/admin.css" />
+  <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
+  <style>
+    /* Minimal Premium Single-Layer Card Design */
+    :root {
+      --bg-color: #f4f6f5;
+      --card-bg: #ffffff;
+      --accent-color: #3b5141;
+      --accent-hover: #2e3f32;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg-color);
+      font-family: 'Outfit', 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+    }
+
+    /* Minimalist Single Card Element (No overlapping background layers) */
+    .login-card {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+      padding: 40px 32px;
+      animation: cardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cardFadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo {
+      height: 52px;
+      margin-bottom: 18px;
+    }
+
+    .login-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .login-header p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    /* Input Forms specifically scoped to login page */
+    .login-card .form-group {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .login-card .form-group label {
+      color: var(--text-main);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-bottom: 2px;
+    }
+
+    .login-card .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .login-card .input-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: color 0.2s ease;
+      z-index: 5;
+    }
+
+    .login-card .form-group input {
+      width: 100%;
+      background: #fafbfa;
+      border: 1px solid var(--border-color) !important;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      padding: 13px 16px 13px 42px !important;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .login-card .form-group input:focus {
+      outline: none;
+      border-color: var(--accent-color) !important;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(59, 81, 65, 0.08) !important;
+    }
+
+    .login-card .form-group input:focus ~ .input-icon {
+      color: var(--accent-color);
+    }
+
+    /* Action button */
+    .btn-login {
+      width: 100%;
+      background: var(--accent-color);
+      color: #ffffff;
+      font-weight: 600;
+      padding: 14px;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .btn-login:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .error-msg {
+      background: rgba(220, 38, 38, 0.05);
+      border: 1px solid rgba(220, 38, 38, 0.15);
+      color: #dc2626;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 16px;
+      display: none;
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .login-footer {
+      margin-top: 24px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 16px;
+      }
+      .login-card {
+        padding: 32px 24px;
+        border-radius: 12px;
+      }
+      .form-group input {
+        font-size: 1rem; /* Prevent auto zoom */
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="/assets/icons/logo-dark.svg" alt="ADREC Logo" class="login-logo" />
+        <h2>Operator Login</h2>
+        <p>Abu Dhabi Real Estate Centre Registry</p>
+      </div>
+
+      <div class="error-msg" id="loginError">Invalid username or password</div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input type="text" id="username" placeholder="operator_admin" required autocomplete="username" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login">
+          <span>Sign In</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        Secured connection. System access attempts are monitored under registry compliance guidelines.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('loginForm');
+      const loginError = document.getElementById('loginError');
+
+      // Check current login state
+      if (localStorage.getItem('admin_token')) {
+        window.location.href = '/admin';
+      }
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginError.style.display = 'none';
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('admin_token', data.token);
+            window.location.href = '/admin';
+          } else {
+            loginError.style.display = 'block';
+            loginError.style.animation = 'none';
+            void loginError.offsetWidth; // Trigger reflow for shake animation
+            loginError.style.animation = 'shake 0.4s ease-in-out';
+          }
+        } catch (err) {
+          console.error(err);
+          loginError.style.display = 'block';
+          loginError.textContent = 'Server connection error. Please try again.';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

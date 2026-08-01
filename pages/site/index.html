@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Abu Dhabi Real Estate Centre (ADREC) – Transforming Abu Dhabi's real estate sector. Access over 50 services, market data, regulations and more." />
+  <meta name="keywords" content="Abu Dhabi Real Estate, ADREC, property, rent, buy, real estate services, Abu Dhabi" />
+  <title>Abu Dhabi Real Estate Centre | ADREC</title>
+  <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
+  <script type="module" src="/src/js/main.js"></script>
+  <style>
+    /* Inline Preloader style to prevent FOUC (Flash of Unstyled Content) */
+    .page-preloader {
+      position: fixed;
+      inset: 0;
+      background: #F5F7F5;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+    body.dark-mode .page-preloader {
+      background: #0f1613;
+    }
+    .preloader-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(22, 101, 52, 0.1);
+      border-top-color: #166534;
+      border-radius: 50%;
+      animation: preloader-spin 0.8s linear infinite;
+    }
+    @keyframes preloader-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Page Preloader overlay -->
+  <div id="pagePreloader" class="page-preloader">
+    <div class="preloader-spinner"></div>
+  </div>
+
+  <!-- ===========================
+       HEADER
+       =========================== -->
+  <header class="site-header" role="banner">
+    <div class="container">
+      <div class="header-inner">
+
+        <!-- Logo -->
+        <a href="/" class="site-logo" aria-label="Abu Dhabi Real Estate Centre – Home">
+          <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre Logo" width="160" height="54" />
+        </a>
+
+        <!-- Main Navigation -->
+        <nav class="main-nav" aria-label="Primary navigation">
+          <ul>
+            <li class="nav-item">
+              <a href="/" class="nav-link active" id="nav-home">Home</a>
+            </li>
+            <li class="nav-item">
+              <a href="/services.html" class="nav-link" id="nav-services">Services</a>
+            </li>
+            <li class="nav-item">
+              <a href="/sectors.html" class="nav-link" id="nav-sectors">Sectors</a>
+            </li>
+            <li class="nav-item">
+              <a href="/market-data.html" class="nav-link" id="nav-market">Market Data</a>
+            </li>
+            <li class="nav-item">
+              <a href="/rules-and-regulations.html" class="nav-link" id="nav-rules">Rules and Regulations</a>
+            </li>
+            <li class="nav-item">
+              <a href="/media.html" class="nav-link" id="nav-media">Media Centre</a>
+            </li>
+            <li class="nav-item">
+              <a href="/directory.html" class="nav-link" id="nav-directory">Directory</a>
+            </li>
+            <li class="nav-item">
+              <a href="/contact.html" class="nav-link" id="nav-contact">Contact Us</a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="header-actions" role="toolbar" aria-label="Site utilities">
+          <a href="/verify-document" class="btn-verify" id="verifyDocBtn" aria-label="Verify Document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            Verify Document
+          </a>
+
+          <button class="icon-btn" id="searchBtn" aria-label="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+
+          <button class="icon-btn" id="darkModeBtn" aria-label="Toggle dark mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+
+          <button class="font-btn" id="fontSizeBtn" aria-label="Adjust font size">Aa</button>
+
+          <button class="lang-btn" id="langBtn" aria-label="Switch language">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </button>
+
+          <button class="hamburger-btn" id="menuBtn" aria-label="Open menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ===========================
+       SEARCH OVERLAY
+       =========================== -->
+  <div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="search-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="search" id="searchInput" placeholder="Search services, regulations, market data…" aria-label="Search" />
+      <button id="searchClose" aria-label="Close search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <main id="main-content">
+
+    <!-- ===========================
+         HERO SECTION
+         =========================== -->
+    <section class="hero-section" aria-label="Hero">
+      <div class="container">
+        <div class="hero-wrap">
+
+          <div class="hero-video-wrap">
+            <!-- Background Video -->
+            <video
+              class="hero-video"
+              src="/assets/media/Home.mp4"
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="auto"
+              aria-hidden="true"
+            ></video>
+
+            <!-- Overlay gradient -->
+            <div class="hero-overlay" aria-hidden="true"></div>
+
+            <!-- Hero Text Content -->
+            <div class="hero-content">
+              <h1 class="hero-title">Transforming Abu Dhabi's real estate sector</h1>
+              <p class="hero-subtitle">
+                The Abu Dhabi Real Estate Centre (ADREC) is mandated with strengthening Abu Dhabi's
+                reputation in the global real estate market.
+              </p>
+              <a href="#" class="btn-learn-more" id="heroLearnMore">
+                Learn More
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </a>
+            </div>
+
+
+          </div>
+
+          <!-- Hero Feature Cards -->
+          <div class="hero-features" aria-label="Key service areas">
+
+            <a href="#" class="hero-feature-card" id="feature-real-estate-services">
+              <div class="hero-feature-icon">
+                <img src="/assets/icons/Home.svg" alt="" aria-hidden="true" />
+              </div>
+              <div class="hero-feature-text">
+                <h3>Real Estate Services</h3>
+                <p>Over 59 real estate services, organized and accessible, in all one platform</p>
+              </div>
+            </a>
+
+            <a href="#" class="hero-feature-card" id="feature-laws-regulations">
+              <div class="hero-feature-icon">
+                <img src="/assets/icons/RulesandRegulation.svg" alt="" aria-hidden="true" />
+              </div>
+              <div class="hero-feature-text">
+                <h3>Laws and Regulations</h3>
+                <p>Explore real estate rules, ownership, leasing, and investment in Abu Dhabi</p>
+              </div>
+            </a>
+
+            <a href="#" class="hero-feature-card" id="feature-market-data">
+              <div class="hero-feature-icon">
+                <img src="/assets/icons/real-estate-market-data.svg" alt="" aria-hidden="true" />
+              </div>
+              <div class="hero-feature-text">
+                <h3>Real Estate Market Data</h3>
+                <p>Access real estate trends, insights, and pricing data for Abu Dhabi</p>
+              </div>
+            </a>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===========================
+         MARKET PERFORMANCE SECTION
+         =========================== -->
+    <section class="market-section" aria-labelledby="market-title">
+      <div class="container">
+        <div class="market-inner">
+
+          <div class="market-content">
+            <div class="market-header">
+              <h2 id="market-title">Market Performance</h2>
+              <a href="#" class="explore-link" id="exploreMarketLink">
+                Explore all
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </a>
+            </div>
+            <p class="market-subtitle">Abu Dhabi Real Estate Market Performance this Year to Date</p>
+
+            <div class="market-stats-grid">
+
+              <div class="stat-card" id="stat-transaction">
+                <div class="stat-card-icon">
+                  <img src="/assets/icons/TotalValue.svg" alt="" aria-hidden="true" />
+                </div>
+                <div>
+                  <div class="stat-value">130.5 bn</div>
+                  <div class="stat-label">Transaction Value</div>
+                </div>
+              </div>
+
+              <div class="stat-card" id="stat-sales">
+                <div class="stat-card-icon">
+                  <img src="/assets/icons/Market data.svg" alt="" aria-hidden="true" />
+                </div>
+                <div>
+                  <div class="stat-value">93.4 bn</div>
+                  <div class="stat-label">Sales Value</div>
+                </div>
+              </div>
+
+              <div class="stat-card" id="stat-mortgage">
+                <div class="stat-card-icon">
+                  <img src="/assets/icons/Finance.svg" alt="" aria-hidden="true" />
+                </div>
+                <div>
+                  <div class="stat-value">31.9 bn</div>
+                  <div class="stat-label">Mortgage Value</div>
+                </div>
+              </div>
+
+              <div class="stat-card" id="stat-fdi">
+                <div class="stat-card-icon">
+                  <img src="/assets/icons/Growth.svg" alt="" aria-hidden="true" />
+                </div>
+                <div>
+                  <div class="stat-value">14.9 bn</div>
+                  <div class="stat-label">Foreign Direct Investment Transaction</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Market Visual -->
+          <div class="market-visual">
+            <img src="/assets/images/market-performance-banner.png" alt="Abu Dhabi skyline showing real estate market performance" loading="lazy" />
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===========================
+         ADREC SERVICES SECTION
+         =========================== -->
+    <section class="services-section" aria-labelledby="services-title">
+      <div class="container">
+
+        <div class="services-header">
+          <h2 id="services-title">ADREC Services</h2>
+          <div class="services-header-actions">
+            <a href="#" class="tab-developer" id="tab-developer-journey" role="tab" aria-label="Developer Journey">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon" aria-hidden="true">
+                <path d="M7 17L17 7M7 7h10v10"/>
+              </svg>
+              Developer Journey
+            </a>
+            <div class="services-tabs" role="tablist" aria-label="Service categories">
+              <button class="service-tab active" id="tab-consumer" data-tab="consumer" role="tab" aria-selected="true" aria-controls="services-consumer">
+                <img src="/assets/icons/Consumer.svg" alt="" aria-hidden="true" />
+                Consumer
+              </button>
+              <button class="service-tab" id="tab-business" data-tab="business" role="tab" aria-selected="false" aria-controls="services-business">
+                <img src="/assets/icons/Business.svg" alt="" aria-hidden="true" />
+                Business
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consumer Services Grid -->
+        <div class="services-grid services-grid-panel active" id="services-consumer" role="tabpanel" aria-labelledby="tab-consumer">
+
+          <article class="service-card" id="service-lease">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Lease.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">10 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Lease</h3>
+              <p class="service-card-desc">Easily register, renew, modify, close, cancel, or terminate your tenancy and PMA contracts.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="service-transactions">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Transaction.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">2 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Transactions</h3>
+              <p class="service-card-desc">View, manage, and oversee property transactions, ensuring transparency and data accuracy.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="service-certificates">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Certificates.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">6 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Certificates</h3>
+              <p class="service-card-desc">Issue title deeds, verification and valuation certificates, property ownership certificates, and site plans.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="service-financing">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Finance.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">4 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Financing &amp; Mortgages</h3>
+              <p class="service-card-desc">Perform services including mortgage registration, release, modification and national housing mortgages.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="service-professions">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Profession.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">5 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Professions Licensing</h3>
+              <p class="service-card-desc">Apply for new licenses, renew existing ones, and manage your credentials to stay compliant.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="service-escrow">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Escrow Management System.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">1 service</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Project Management System</h3>
+              <p class="service-card-desc">Simplify property payments while keeping funds secure, transparent, and efficient.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="service-authorization">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Authorization.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">1 service</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Authorization</h3>
+              <p class="service-card-desc">Authorize a trusted legal representative to perform transactions on your behalf.</p>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- Business Services Grid -->
+        <div class="services-grid services-grid-panel" id="services-business" role="tabpanel" aria-labelledby="tab-business" hidden>
+
+          <article class="service-card" id="biz-madhmoun">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Madhmoun.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">9 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Madhmoun</h3>
+              <p class="service-card-desc">Discover properties, verify listings, and engage with the real estate market securely and efficiently.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="biz-advertising">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Advertising.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">5 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Advertising &amp; Exhibition Permits</h3>
+              <p class="service-card-desc">Apply to have an advertisement permit issued, allowing you to legally promote your property or business.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="biz-owner-association">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Owner.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">8 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Owner Association</h3>
+              <p class="service-card-desc">Manage jointly owned properties, including registration, budgets, invoices, and service charges.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="biz-projects">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Real Estate Projects.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">1 service</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Real Estate Projects</h3>
+              <p class="service-card-desc">Register development projects and track their completion, maintaining accurate and up-to-date records.</p>
+            </div>
+          </article>
+
+          <article class="service-card" id="biz-company-mgmt">
+            <div class="service-card-meta">
+              <div class="service-card-icon">
+                <img src="/assets/icons/Company Management.svg" alt="" aria-hidden="true" />
+              </div>
+              <span class="service-count">4 services</span>
+            </div>
+            <div class="service-card-body">
+              <h3 class="service-card-title">Company Management</h3>
+              <p class="service-card-desc">Access services, manage company and employee accounts, and permissions.</p>
+            </div>
+          </article>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===========================
+         ADREC EXPERIENCE SECTION
+         =========================== -->
+    <section class="experience-section" aria-labelledby="experience-title">
+      <div class="container">
+
+        <div class="experience-header">
+          <h2 id="experience-title">ADREC Experience</h2>
+          <div class="experience-tabs" role="tablist" aria-label="Experience categories">
+
+            <button class="exp-tab active" id="exptab-branches" data-exp="branches" role="tab" aria-selected="true" aria-controls="exp-branches">
+              <img src="/assets/icons/Branches.svg" alt="" aria-hidden="true" />
+              Branches
+            </button>
+
+            <button class="exp-tab" id="exptab-trustee" data-exp="trustee" role="tab" aria-selected="false" aria-controls="exp-trustee">
+              <img src="/assets/icons/Trustee Office.svg" alt="" aria-hidden="true" />
+              Trustee Office
+            </button>
+
+            <button class="exp-tab" id="exptab-atyourplace" data-exp="atyourplace" role="tab" aria-selected="false" aria-controls="exp-atyourplace">
+              <img src="/assets/icons/At Your Place.svg" alt="" aria-hidden="true" />
+              At Your Place
+            </button>
+
+            <button class="exp-tab" id="exptab-taswea" data-exp="taswea" role="tab" aria-selected="false" aria-controls="exp-taswea">
+              <img src="/assets/icons/Tasweaicon.svg" alt="" aria-hidden="true" />
+              Taswea
+            </button>
+
+            <button class="exp-tab" id="exptab-virtual" data-exp="virtual" role="tab" aria-selected="false" aria-controls="exp-virtual">
+              <img src="/assets/icons/Virtual Centers.svg" alt="" aria-hidden="true" />
+              Virtual Centers
+            </button>
+
+          </div>
+        </div>
+
+        <!-- BRANCHES PANEL -->
+        <div class="experience-content active" id="exp-branches" role="tabpanel" aria-labelledby="exptab-branches">
+          <div class="experience-card">
+            <div class="branches-grid">
+
+              <!-- Main Branch Card – Left -->
+              <div class="branch-card-main" id="branch-abudhabi">
+                <img src="/assets/images/adrec-branch.png" alt="Abu Dhabi Branch – ADREC headquarters building" loading="lazy" />
+                <div class="branch-card-overlay">
+                  <h3>Abu Dhabi Branch</h3>
+                  <p>At the Heart of Real Estate in the Capital</p>
+                </div>
+              </div>
+
+              <!-- Side Branch Cards – Right column -->
+              <div class="branch-side-cards">
+
+                <div class="branch-card-side" id="branch-alain">
+                  <img src="/assets/images/Al Ain Branch.png" alt="Al Ain Branch map illustration" loading="lazy" />
+                  <div class="branch-card-overlay">
+                    <h3>Al Ain Branch</h3>
+                    <p>Serving the Oasis City with Care</p>
+                  </div>
+                </div>
+
+                <div class="branch-card-side" id="branch-aldhafrah">
+                  <img src="/assets/images/Al Dhafrah Branch.png" alt="Al Dhafrah Branch map illustration" loading="lazy" />
+                  <div class="branch-card-overlay">
+                    <h3>Al Dhafrah Branch</h3>
+                    <p>Supporting Growth Across Al Dhafrah</p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- TRUSTEE OFFICE PANEL -->
+        <div class="experience-content" id="exp-trustee" role="tabpanel" aria-labelledby="exptab-trustee">
+          <div class="trustee-panel-content">
+            <div class="trustee-text-col">
+              <h3>Trusted Real Estate Partners Near You</h3>
+              <p>Our ADREC Trustee Offices are spread across Abu Dhabi to provide real estate services conveniently and securely.</p>
+              <p>Waiting in line is a thing of the past. Simply arrive at your scheduled appointment, and our team of real estate experts will handle all your needs with speed, precision, and professionalism.</p>
+              <p>Visit our offices today and enjoy a smooth, efficient experience where your transactions are completed quickly and confidently.</p>
+              <p>With ADREC, you're always in expert hands.</p>
+              <button class="btn-trustee">View More Details</button>
+            </div>
+            <div class="trustee-img-col">
+              <img src="/assets/images/Trustee Office Image.png" alt="Trustee Office representative helping a customer" loading="lazy" />
+            </div>
+          </div>
+        </div>
+
+        <!-- AT YOUR PLACE PANEL -->
+        <div class="experience-content" id="exp-atyourplace" role="tabpanel" aria-labelledby="exptab-atyourplace">
+          <div class="trustee-panel-content">
+            <div class="trustee-text-col">
+              <h3>Bring ADREC Services to Your Doorstep</h3>
+              <p>Our "At Your Place" service is designed to offer maximum convenience by bringing real estate transactions directly to your home or office.</p>
+              <p>Whether you need to complete a property transfer, finalize a lease, or issue a certificate, our mobile agents are equipped to handle everything on-site securely and efficiently. Save time and avoid the commute with our premium doorstep service.</p>
+              <button class="btn-trustee">Book an Appointment</button>
+            </div>
+            <div class="trustee-img-col">
+              <img src="/assets/images/At Your Place image.png" alt="ADREC At Your Place mobile service" loading="lazy" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TASWEA PANEL -->
+        <div class="experience-content" id="exp-taswea" role="tabpanel" aria-labelledby="exptab-taswea">
+          <div class="trustee-panel-content">
+            <div class="trustee-text-col">
+              <h3>A Streamlined Real Estate Auction and Liquidation Platform</h3>
+              <p>Taswea provides a transparent, secure, and highly efficient platform for real estate auctions and property liquidations in Abu Dhabi.</p>
+              <p>Designed for both buyers and sellers, our platform ensures fair market value realization through a regulated bidding process. Explore upcoming auctions, register as a bidder, and participate seamlessly with full confidence in our trusted legal framework.</p>
+              <button class="btn-trustee">Explore Taswea Platform</button>
+            </div>
+            <div class="trustee-img-col">
+              <img src="/assets/images/Taswea.png" alt="ADREC Taswea real estate auction service" loading="lazy" />
+            </div>
+          </div>
+        </div>
+
+        <!-- VIRTUAL CENTERS PANEL -->
+        <div class="experience-content" id="exp-virtual" role="tabpanel" aria-labelledby="exptab-virtual">
+          <div class="trustee-panel-content">
+            <div class="trustee-text-col">
+              <h3>Connecting You to ADREC, Wherever You Are</h3>
+              <p>With ADREC's Virtual Centers, you can manage and complete your real estate transactions anytime, anywhere, quickly, securely, and effortlessly.</p>
+              <div class="virtual-contact-grid">
+                <div class="contact-item">
+                  <div class="contact-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+                  </div>
+                  <div class="contact-text">
+                    <strong>Contact us at:</strong>
+                    <span>02 301 7200</span>
+                  </div>
+                </div>
+                <div class="contact-item">
+                  <div class="contact-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  </div>
+                  <div class="contact-text">
+                    <strong>Email:</strong>
+                    <span>support@dari.ae</span>
+                  </div>
+                </div>
+                <div class="contact-item full-width">
+                  <div class="contact-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                  </div>
+                  <div class="contact-text">
+                    <strong>Working Hours:</strong>
+                    <span>Monday to Thursday: 07:30 AM - 03:30 PM<br>Friday: 07:30 AM - 12:30 PM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="trustee-img-col">
+              <img src="/assets/images/Virtual Centers tab.png" alt="ADREC Virtual Centers online services" loading="lazy" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===========================
+       FOOTER
+       =========================== -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-card">
+        <div class="footer-inner">
+
+          <!-- Brand -->
+          <div class="footer-logo-wrap">
+            <div class="footer-logo">
+              <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre" />
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="footer-nav" aria-label="Footer navigation">
+            <div class="footer-nav-row">
+              <a href="/" id="footer-home">Home</a>
+              <a href="/services.html" id="footer-services">Services</a>
+              <a href="#" id="footer-market">Market Data</a>
+              <a href="#" id="footer-rules">Rules &amp; Regulations</a>
+              <a href="#" id="footer-media">Media Centre</a>
+              <a href="#" id="footer-directory">Directory</a>
+            </div>
+            <div class="footer-nav-row">
+              <a href="#" id="footer-apis">ADREC APIs</a>
+              <a href="#" id="footer-contact">Contact Us</a>
+              <a href="#" id="footer-about">About Us</a>
+              <a href="#" id="footer-faqs">FAQs</a>
+            </div>
+          </nav>
+
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+
+          <div class="footer-social" aria-label="Social media links">
+            <a href="#" class="social-link" id="social-facebook" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-twitter" aria-label="X (Twitter)">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-linkedin" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                <rect x="2" y="9" width="4" height="12"/>
+                <circle cx="4" cy="4" r="2"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-instagram" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" id="social-youtube" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+                <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
+              </svg>
+            </a>
+          </div>
+          
+          <div class="footer-legal-wrap">
+            <div class="footer-copy">© 2026 Abu Dhabi Real Estate Centre.</div>
+            <div class="footer-legal">
+              <a href="#" id="footer-privacy">Privacy Policy</a>
+              <span>•</span>
+              <a href="#" id="footer-terms">Terms and Conditions</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+
+  <!-- ===========================
+       MOBILE DRAWER MENU
+       =========================== -->
+  <div class="mobile-drawer" id="mobileDrawer" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+    <div class="drawer-header">
+      <a href="/" class="drawer-logo" aria-label="Abu Dhabi Real Estate Centre – Home">
+        <img src="/assets/icons/logo-dark.svg" alt="Abu Dhabi Real Estate Centre Logo" width="140" height="47" />
+      </a>
+      <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <nav class="drawer-nav">
+      <ul>
+        <li>
+          <a href="/" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Home
+          </a>
+        </li>
+        <li>
+          <a href="/services.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Services
+          </a>
+        </li>
+        <li>
+          <a href="/sectors.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+            Sectors
+            <svg class="drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+        </li>
+        <li>
+          <a href="/market-data.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            </svg>
+            Market Data
+            <svg class="drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </a>
+        </li>
+        <li>
+          <a href="/rules-and-regulations.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Rules and Regulations
+          </a>
+        </li>
+        <li>
+          <a href="/media.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            </svg>
+            Media Centre
+          </a>
+        </li>
+        <li>
+          <a href="/directory.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            </svg>
+            Directory
+          </a>
+        </li>
+        <li>
+          <a href="/contact.html" class="drawer-link">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Contact Us
+          </a>
+        </li>
+      </ul>
+
+      <ul class="drawer-settings-list">
+        <li>
+          <button class="drawer-link-btn" id="drawerFontSizeBtn">
+            <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7V4h16v3M9 20h6M12 4v16"></path>
+            </svg>
+            Font Size
+            <svg class="drawer-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </li>
+        <li>
+          <div class="drawer-toggle-item">
+            <span class="drawer-toggle-label">
+              <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+              </svg>
+              Dark Mode
+            </span>
+            <label class="switch">
+              <input type="checkbox" id="drawerDarkModeCheckbox" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- ===========================
+       FLOATING CHATBOT WIDGET
+       =========================== -->
+  <button class="chatbot-btn" id="chatbotBtn" aria-label="Open Chat Assistant">
+    <img src="/assets/images/floating-chatbot-icon.gif" alt="Chatbot Icon" />
+  </button>
+
+  <div class="chatbot-modal" id="chatbotModal" role="dialog" aria-modal="true" aria-label="ADREC Chat Assistant">
+    <div class="chatbot-modal-header">
+      <img src="/assets/icons/logo-dark.svg" alt="ADREC Logo" class="chatbot-logo" />
+      <div class="chatbot-header-actions">
+        <button class="chatbot-action-btn" aria-label="Maximize chatbot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+        <button class="chatbot-action-btn close" id="chatbotCloseBtn" aria-label="Close chatbot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="chatbot-modal-body">
+      <div class="chatbot-info-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <p>This ADREC Chatbot provides general information for user convenience and may not always be accurate or complete. For official or verified information, please contact ADREC directly.</p>
+    </div>
+
+    <div class="chatbot-modal-footer">
+      <div class="chatbot-input-wrap">
+        <input type="text" placeholder="Ask a question..." />
+        <button class="chatbot-send-btn" aria-label="Send question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="chatbot-bottom-bar"></div>
+    </div>
+  </div>
+
+</body>
+</html>

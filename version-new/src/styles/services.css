@@ -1,0 +1,238 @@
+/* Services Page Specific Styles */
+.services-banner {
+  display: flex;
+  background-color: #E8F0E6; /* Light green background */
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 40px auto;
+  max-width: 1200px;
+  min-height: 320px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.services-banner-content {
+  flex: 1.2;
+  padding: 50px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 2;
+}
+
+.services-banner-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.services-banner-content p {
+  font-size: 1.05rem;
+  color: #374151;
+  line-height: 1.6;
+  max-width: 90%;
+}
+
+.services-banner-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-service-pill {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.btn-service-pill:hover {
+  background: #F8FAFC;
+  border-color: #94A3B8;
+}
+
+.btn-service-pill.active {
+  border-color: #111827;
+  font-weight: 600;
+}
+
+.services-banner-image {
+  flex: 1;
+  background-image: url('/assets/images/abu_dhabi_skyscrapers.png');
+  background-size: cover;
+  background-position: center;
+  clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+  position: relative;
+}
+
+.services-banner-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  clip-path: polygon(15% 0, 16% 0, 1% 100%, 0 100%);
+}
+
+.services-main-section {
+  max-width: 1200px;
+  margin: 60px auto 80px;
+}
+
+.services-section-header h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.services-section-header p {
+  font-size: 1.05rem;
+  color: #4B5563;
+  margin-bottom: 30px;
+}
+
+.services-nav-tabs-container {
+  background: #E6EAE5; /* Light green bar background */
+  border-radius: 6px;
+  padding: 6px;
+  margin-bottom: 40px;
+}
+
+.services-nav-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.services-nav-tabs::-webkit-scrollbar {
+  display: none; /* Hide scrollbar */
+}
+
+.tab-link {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.tab-link.active {
+  background: #AABCA9; /* Darker green active tab background */
+  color: #111827;
+  font-weight: 600;
+}
+
+.tab-link:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.services-page-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.services-page-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.services-page-card h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.services-page-card p {
+  font-size: 0.95rem;
+  color: #4B5563;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  flex-grow: 1;
+}
+
+.services-page-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #111827;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+
+.services-page-card-link:hover {
+  gap: 10px;
+}
+
+.services-page-card-link svg {
+  transition: transform 0.2s;
+}
+
+@media (max-width: 992px) {
+  .services-banner {
+    flex-direction: column;
+    margin: 20px;
+    min-height: auto;
+  }
+  .services-banner-image {
+    min-height: 240px;
+    clip-path: none;
+  }
+  .services-banner-image::before {
+    display: none;
+  }
+  .services-banner-content {
+    padding: 30px 24px;
+  }
+  .services-main-section {
+    padding: 0 20px;
+    margin-top: 30px;
+  }
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+  .services-banner-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-service-pill {
+    width: 100%;
+    text-align: center;
+  }
+}

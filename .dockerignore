@@ -1,0 +1,11 @@
+node_modules
+dist
+server/dist
+server/node_modules
+.env
+.env.*
+.git
+.vercel
+scratch
+.gemini
+npm-debug.log
