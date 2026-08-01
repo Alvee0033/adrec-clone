@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/src/styles/verify.css" />
   <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
   <script type="module" src="/src/js/main.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -167,19 +168,8 @@
         </div>
 
         <!-- Captcha -->
-        <div class="captcha-container" id="captchaContainer">
-          <p class="captcha-title">Please check the box below to proceed</p>
-          <div class="captcha-box">
-            <label class="captcha-checkbox-label">
-              <input type="checkbox" class="captcha-checkbox">
-              <span class="captcha-custom-box"></span>
-              I'm not a robot
-            </label>
-            <div class="captcha-logo">
-              <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA" width="32">
-              <span>reCAPTCHA</span>
-            </div>
-          </div>
+        <div class="captcha-container" id="captchaContainer" style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1.5rem;">
+          <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
         </div>
 
         <!-- Verification Success Container (Initially Hidden) -->
@@ -287,10 +277,9 @@
           const captchaContainer = document.getElementById('captchaContainer');
           const verifySuccessCard = document.getElementById('verifySuccessCard');
           const verifyBtn = document.querySelector('.btn-verify-submit');
-          const captchaCheckbox = document.querySelector('.captcha-checkbox');
           const contractInput = document.querySelector('.verify-input');
           
-          if (verifyBtn && captchaCheckbox && verifySuccessCard) {
+          if (verifyBtn && verifySuccessCard) {
             // Create a premium loading overlay
             const loadingOverlay = document.createElement('div');
             loadingOverlay.className = 'loading-overlay-premium';
@@ -385,8 +374,9 @@
                 alert('Please enter a contract number');
                 return;
               }
-              if (!captchaCheckbox.checked) {
-                alert('Please check the Captcha box to proceed');
+              const captchaResponse = grecaptcha.getResponse();
+              if (!captchaResponse) {
+                alert('Please complete the Captcha to proceed');
                 return;
               }
               
@@ -462,7 +452,7 @@
             if (anotherBtn) {
               anotherBtn.addEventListener('click', () => {
                 contractInput.value = '';
-                captchaCheckbox.checked = false;
+                grecaptcha.reset();
                 
                 verifyFormCard.style.display = 'block';
                 captchaContainer.style.display = 'block';
@@ -475,7 +465,7 @@
             if (denyRetryBtn) {
               denyRetryBtn.addEventListener('click', () => {
                 contractInput.value = '';
-                captchaCheckbox.checked = false;
+                grecaptcha.reset();
                 
                 verifyFormCard.style.display = 'block';
                 captchaContainer.style.display = 'block';
