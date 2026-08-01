@@ -29,6 +29,8 @@ export class AppController {
       '/index.html': 'pages/site/index.html',
       '/services.html': 'pages/site/services.html',
       '/verify.html': 'pages/site/verify.html',
+      '/verify-document': 'pages/site/verify.html',
+      '/verify-document.html': 'pages/site/verify.html',
       '/sectors.html': 'pages/site/sectors.html',
       '/market-data.html': 'pages/site/market-data.html',
       '/rules-and-regulations.html': 'pages/site/rules-and-regulations.html',
