@@ -69,7 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
       pdfPreviewContainer.hidden = true;
       pdfPreviewContainer.style.display = 'none';
     }
-    if (pdfPreviewIframe) pdfPreviewIframe.src = '';
+    if (pdfPreviewIframe) {
+      try {
+        pdfPreviewIframe.contentWindow.location.replace('about:blank');
+      } catch(e) {
+        pdfPreviewIframe.src = '';
+      }
+    }
     if (pdfUploadStatus) {
       pdfUploadStatus.textContent = 'PDF appears here after OCR or when viewing a saved contract.';
       pdfUploadStatus.style.color = '#6B7280';
@@ -78,7 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showPdfPreview(src, statusText, statusColor = '#166534') {
     if (!pdfPreviewIframe || !pdfPreviewContainer) return;
-    pdfPreviewIframe.src = src;
+    try {
+      pdfPreviewIframe.contentWindow.location.replace(src);
+    } catch (e) {
+      const newIframe = document.createElement('iframe');
+      newIframe.id = pdfPreviewIframe.id;
+      newIframe.title = pdfPreviewIframe.title;
+      newIframe.src = src;
+      pdfPreviewIframe.parentNode.replaceChild(newIframe, pdfPreviewIframe);
+      pdfPreviewIframe = newIframe;
+    }
     pdfPreviewContainer.hidden = false;
     pdfPreviewContainer.style.display = 'block';
     if (statusText && pdfUploadStatus) {
@@ -563,7 +578,16 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('No PDF available to preview yet.');
       return;
     }
-    modalIframe.src = src;
+    try {
+      modalIframe.contentWindow.location.replace(src);
+    } catch (e) {
+      const newIframe = document.createElement('iframe');
+      newIframe.id = modalIframe.id;
+      newIframe.title = modalIframe.title;
+      newIframe.src = src;
+      modalIframe.parentNode.replaceChild(newIframe, modalIframe);
+      modalIframe = newIframe;
+    }
     modalScale = 1;
     if (zoomContent) zoomContent.style.transform = 'scale(1)';
     modalOverlay.classList.add('is-open');
@@ -573,7 +597,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function closePdfMaximize() {
     if (!modalOverlay) return;
-    if (modalIframe) modalIframe.src = '';
+    if (modalIframe) {
+      try {
+        modalIframe.contentWindow.location.replace('about:blank');
+      } catch(e) {
+        modalIframe.src = '';
+      }
+    }
     modalOverlay.classList.remove('is-open');
     modalOverlay.style.display = 'none';
     document.body.style.overflow = '';
@@ -853,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('btnDeleteContract').style.display = 'inline-flex';
       showFormView();
     } else {
-      showListView();
+      window.showListView();
     }
   }
 
