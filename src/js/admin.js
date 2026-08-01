@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/admin/login';
     return;
   }
+  document.body.style.opacity = '1';
 
   const contractsListView = document.getElementById('contractsListView');
   const contractFormView = document.getElementById('contractFormView');
