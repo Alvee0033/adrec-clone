@@ -67,8 +67,13 @@ export class ContractsController {
   @UseGuards(AuthGuard)
   @Post(':id')
   async updateContract(@Param('id') id: string, @Body() body: any) {
-    const merged = await this.contractsService.saveContract(id, body);
-    return { success: true, contract: merged };
+    try {
+      const merged = await this.contractsService.saveContract(id, body);
+      return { success: true, contract: merged };
+    } catch (err) {
+      console.error('ERROR SAVING CONTRACT:', err);
+      throw err;
+    }
   }
 
   @UseGuards(AuthGuard)
