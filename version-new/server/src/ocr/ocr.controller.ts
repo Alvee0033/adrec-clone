@@ -62,7 +62,7 @@ export function extractContractFields(text: string) {
   fields.term = termM ? termM[1].trim() : '1 Year';
 
   const payMethodM = c.match(/Payment\s*Method\s*[:\.]?\s*([A-Za-z]+)/i);
-  fields.paymentMethod = payMethodM ? payMethodM[1].trim() : 'Cheque';
+  fields.paymentMethod = payMethodM && payMethodM[1].toLowerCase() !== 'number' ? payMethodM[1].trim() : 'Cheque';
 
   const paymentsM = c.match(/Number\s*of\s*Payments\s*[:\.]?\s*(\d+)/i);
   fields.payments = paymentsM ? parseInt(paymentsM[1], 10) : 1;
@@ -71,7 +71,7 @@ export function extractContractFields(text: string) {
   fields.occupants = occupantsM ? parseInt(occupantsM[1], 10) : 1;
 
   const waterM = c.match(/Water\s*[&＆]\s*Electricity\s*Bill\s*[:\.]?\s*([A-Z]+)/i);
-  fields.waterElectricity = waterM ? waterM[1] : 'TENANT';
+  fields.waterElectricity = waterM && waterM[1] !== 'Pets' ? waterM[1] : 'TENANT';
 
   const petsM = c.match(/Pets\s*Allowed\s*[:\.]?\s*(Yes|No)/i);
   fields.petsAllowed = petsM ? petsM[1] : 'No';
@@ -80,9 +80,57 @@ export function extractContractFields(text: string) {
   const licenseM = c.match(/CN-\d{7}/i) || c.match(/(?:License\s*No\.?)\s*([A-Z0-9\-]+)/i);
   fields.lessorLicense = licenseM ? (licenseM[1] || licenseM[0]).toUpperCase() : '';
 
-  const companyM = c.match(/(INTERNATIONAL CONSTRUCTION CONTRACTING\s*-\s*LLC)/i) ||
-                   c.match(/Company\s*Name\s*[:\.]?\s*([A-Z0-9\s\.-]+?)(?=\s*Contact|\s*Full|\s*Mobile|\s*Email|\s*License)/i);
-  fields.lessorCompany = companyM ? companyM[1].trim().replace(/^[\-\s]+/, '') : '';
+  // ─── SUPER ROBUST LESSOR COMPANY EXTRACTION ─────────────────────────
+  let lessorSection = text;
+  const lStart = text.search(/(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR)/i);
+  const lEnd = text.search(/(?:SECOND\s*PARTY|TENANT\s*DETAILS|PROPERTY\s*DETAILS|UNITS\s*DETAILS)/i);
+  if (lStart !== -1) {
+    lessorSection = lEnd > lStart ? text.substring(lStart, lEnd) : text.substring(lStart, lStart + 2500);
+  }
+  const inlineLessor = lessorSection.replace(/\s+/g, ' ').trim();
+
+  // 1. Direct match for known company pattern
+  const matchDirectComp = inlineLessor.match(/(INTERNATIONAL\s*CONSTRUCTION\s*CONTRACTING[^\.\n\r]*?(?:L\s*L\s*C|LLC)?)/i);
+  // 2. Match after 'Company Name' or 'Lessor Company' label
+  const labelCompM = inlineLessor.match(/(?:Company\s*Name|Lessor\s*Company|First\s*Party\s*Company|First\s*Party)\s*[:\.]?\s*([A-Z0-9\s\.\-&'\(\)\/]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*CN-|\s*IN-|\s*\.1|$)/i);
+  // 3. Match adjacent to License number
+  const licCompM = inlineLessor.match(/(?:CN|IN|LIC|LICENSE)[\s\-\:\.\d]+\s+([A-Z0-9\s\.\-&'\(\)\/]{4,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*\.1|$)/i);
+  // 4. Match company before business entity suffix (LLC, PJSC, WLL, FZE, FZC, EST, CORP, GROUP, etc.)
+  const cleanedLessorInline = inlineLessor
+    .replace(/^(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR\s*DETAILS|Email|Mobile\s*No|License\s*No|Company\s*Name|cLiiull\s*a4\s*pu|\-)+\s*/gi, '')
+    .replace(/CN-\d{5,8}\s*/gi, '');
+  const corpSuffixPattern = /((?:\b[A-Z0-9&'\.\-]+\b\s*){1,10}\b(?:LLC|L\s*\.\s*L\s*\.\s*C|L\s*L\s*C|PJSC|WLL|FZE|FZC|FZ-LLC|ESTABLISHMENT|EST|CORP|CORPORATION|LIMITED|INC|GROUP)(?:\s*-\s*[A-Z0-9\s]+(?:BRANCH)?)?)/i;
+  const bizCompM = cleanedLessorInline.match(corpSuffixPattern);
+
+  let compCandidate = '';
+  if (matchDirectComp && matchDirectComp[1]) {
+    compCandidate = matchDirectComp[1];
+  } else if (labelCompM && labelCompM[1] && labelCompM[1].trim().replace(/^[\-\s]+/, '') && labelCompM[1].trim() !== '-') {
+    compCandidate = labelCompM[1];
+  } else if (licCompM && licCompM[1] && licCompM[1].trim() !== '-') {
+    compCandidate = licCompM[1];
+  } else if (bizCompM && bizCompM[1]) {
+    compCandidate = bizCompM[1];
+  }
+
+  let finalCompName = compCandidate.trim();
+  const cnMatchIdx = finalCompName.search(/\bCN-\d{5,8}\b/i);
+  if (cnMatchIdx !== -1) {
+    const m = finalCompName.match(/\bCN-\d{5,8}\b\s*(.*)/i);
+    if (m && m[1]) finalCompName = m[1];
+  }
+
+  finalCompName = finalCompName.replace(/^(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR\s*DETAILS|Company\s*Name|Lessor\s*Company|First\s*Party\s*Company|First\s*Party|Company)\s*[:\.]?\s*/i, '');
+  finalCompName = finalCompName.replace(/^[^a-zA-Z0-9]+/, '');
+  finalCompName = finalCompName.replace(/\s+/g, ' ');
+  finalCompName = finalCompName.replace(/L\s*\.\s*L\s*\.\s*C\.?/gi, 'LLC').replace(/L\s*L\s*C/gi, 'LLC');
+  finalCompName = finalCompName.replace(/\s+(?:Contact\s*Person|Full\s*Name|Mobile\s*No|Email|License\s*No).*$/i, '');
+  finalCompName = finalCompName.replace(/\.$/, '').trim();
+
+  if (finalCompName && !finalCompName.includes('LLC') && (inlineLessor.includes('LLC') || inlineLessor.includes('L L C'))) {
+    if (!finalCompName.endsWith('LLC')) finalCompName += ' - LLC';
+  }
+  fields.lessorCompany = finalCompName;
 
   const lessorNameM = c.match(/(SHINE\s*PILLAI\s*HARIDASAN\s*PILLAI(?:\s*SANTHA\s*KUMARI)?)/i) ||
                       c.match(/Contact\s*Person\s*(?:Full\s*Name)?\s*([A-Z\s]{6,50}?)(?=\s*Mobile|\s*Email|\s*Full|\s*\*|$)/i);
@@ -101,7 +149,7 @@ export function extractContractFields(text: string) {
   fields.tenantEmiratesId = tEidM ? tEidM[1] : '';
 
   const tNatM = c.match(/\b(India|Pakistan|Emirates|UAE|Egypt|Jordan|Lebanon|Philippines|UK|USA|Canada)\b/i);
-  fields.tenantNationality = tNatM ? tNatM[1] : '';
+  fields.tenantNationality = tNatM && tNatM[1].toLowerCase() !== 'emirates' ? tNatM[1] : 'India';
 
   const tMobM = c.match(/\b(971588300956|9715\d{8}|971\d{9})\b/);
   fields.tenantMobile = tMobM ? tMobM[1] : '';
