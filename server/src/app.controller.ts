@@ -18,7 +18,7 @@ export class AppController {
   }
 
   // Widescreen static assets / page files mapping fallback if ServeStaticModule misses it
-  @Get('*')
+  @Get('*path')
   catchAll(@Req() req: Request, @Res() res: Response, @Next() next: NextFunction) {
     if (req.path.startsWith('/api')) {
       return next();
