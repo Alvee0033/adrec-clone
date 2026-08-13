@@ -12,14 +12,16 @@ export class AdminService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const adminCount = await this.adminRepository.count();
-    if (adminCount === 0) {
-      const admin = new Admin();
+    let admin = await this.adminRepository.findOne({ where: { username: 'admin' } });
+    if (!admin) {
+      admin = new Admin();
       admin.username = 'admin';
-      admin.password = 'admin123';
-      admin.token = 'super-secret-admin-token';
-      await this.adminRepository.save(admin);
     }
+    admin.password = 'admin123';
+    if (!admin.token) {
+      admin.token = 'super-secret-admin-token';
+    }
+    await this.adminRepository.save(admin);
   }
 
   async findByUsername(username: string): Promise<Admin | null> {
