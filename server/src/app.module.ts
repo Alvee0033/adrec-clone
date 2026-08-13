@@ -38,7 +38,8 @@ const distPath = join(process.cwd(), '..', 'dist');
     ...(fs.existsSync(distPath) ? [
       ServeStaticModule.forRoot({
         rootPath: distPath,
-        exclude: ['/api/(.*)'],
+        renderPath: '/',
+        serveRoot: '/',
       }),
     ] : []),
   ],
