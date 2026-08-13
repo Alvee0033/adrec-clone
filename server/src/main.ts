@@ -6,9 +6,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 // Maps clean URLs to HTML files inside dist/
+// Add any URL that does NOT match its filename here
 const PAGE_FILES: Record<string, string> = {
   '/': 'pages/site/index.html',
   '/index.html': 'pages/site/index.html',
+  // verify-document URL maps to verify.html (name mismatch — must be explicit)
+  '/verify-document': 'pages/site/verify.html',
+  '/verify-document.html': 'pages/site/verify.html',
+  // admin routes
   '/admin': 'pages/admin/index.html',
   '/admin/': 'pages/admin/index.html',
   '/admin/login': 'pages/admin/login.html',
