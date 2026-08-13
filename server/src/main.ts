@@ -55,6 +55,13 @@ async function bootstrap() {
 
   app.enableCors({ origin: true, credentials: true });
 
+  // Fix for UAE ISPs (Etisalat/du): they block UDP 443 (QUIC/HTTP3)
+  // Setting alt-svc: clear tells browsers to stop trying HTTP/3 and use TCP only
+  app.use((_req: any, res: any, next: any) => {
+    res.setHeader('alt-svc', 'clear');
+    next();
+  });
+
   // Force HTTPS
   app.use((req: any, res: any, next: any) => {
     if (req.headers['x-forwarded-proto'] === 'http') {
