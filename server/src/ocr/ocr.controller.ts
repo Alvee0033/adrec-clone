@@ -18,8 +18,24 @@ export function extractContractFields(text: string) {
   const fields: any = {};
   const c = text.replace(/\s+/g, ' ').trim();
 
-  // ─── CONTRACT DETAILS ────────────────────────────────────────────────
-  const numM = c.match(/(?:Contract\s*No\.?|Contract\s*Number)\s*[:\.]?\s*(\d{12})/i) || c.match(/\b(20\d{10})\b/);
+  // ─── SECTION SEGMENTATION ─────────────────────────────────────────────
+  const lessorStart = text.search(/(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR)/i);
+  const tenantStart = text.search(/(?:SECOND\s*PARTY|TENANT\s*DETAILS|2\.\s*TENANT)/i);
+  const propStart   = text.search(/PROPERTY\s*DETAILS/i);
+  const unitsStart  = text.search(/UNITS?\s*DETAILS/i);
+
+  const lessorSection   = lessorStart !== -1 ? text.substring(lessorStart,  tenantStart > lessorStart ? tenantStart : lessorStart + 2500) : c;
+  const tenantSection   = tenantStart !== -1 ? text.substring(tenantStart,  propStart   > tenantStart ? propStart   : tenantStart + 2500) : c;
+  const propertySection = propStart   !== -1 ? text.substring(propStart,    unitsStart  > propStart   ? unitsStart  : propStart   + 1500) : c;
+  const unitsSection    = unitsStart  !== -1 ? text.substring(unitsStart,   unitsStart + 2000) : c;
+
+  const lc = lessorSection  .replace(/\s+/g, ' ').trim();
+  const tc = tenantSection  .replace(/\s+/g, ' ').trim();
+  const pc = propertySection.replace(/\s+/g, ' ').trim();
+  const uc = unitsSection   .replace(/\s+/g, ' ').trim();
+
+  // ─── CONTRACT DETAILS ──────────────────────────────────────────────────
+  const numM = c.match(/(?:Contract\s*No\.?|Contract\s*Number)\s*[:\.]?\s*(\d{10,15})/i) || c.match(/\b(20\d{10})\b/);
   fields.number = numM ? numM[1] : '';
 
   const issueDateM = c.match(/Issue\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i) || c.match(/Contract\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i);
@@ -31,27 +47,25 @@ export function extractContractFields(text: string) {
   const endDateM = c.match(/End\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i);
   fields.endDate = endDateM ? endDateM[1] : '';
 
-  // Fallback for multi-column pdf-parse stream where dates appear sequentially
-  if (!fields.startDate || fields.startDate === fields.issueDate) {
-    const uniqueDates = [...new Set(c.match(/\b(\d{4}-\d{2}-\d{2})\b/g) || [])];
-    if (uniqueDates.length >= 3) {
-      fields.issueDate = uniqueDates[0];
-      fields.startDate = uniqueDates[1];
-      fields.endDate = uniqueDates[2];
-    }
+  // Positional fallback — issue, start, end appear in sequence
+  if (!fields.issueDate || !fields.startDate || !fields.endDate) {
+    const allDates = [...new Set(c.match(/\b(\d{4}-\d{2}-\d{2})\b/g) || [])];
+    if (!fields.issueDate && allDates[0]) fields.issueDate = allDates[0];
+    if (!fields.startDate && allDates[1]) fields.startDate = allDates[1];
+    if (!fields.endDate   && allDates[2]) fields.endDate   = allDates[2];
   }
 
   const rentM = c.match(/Annual\s*Rent\s*[:\.]?\s*([\d,]+(?:\.\d+)?)/i);
   fields.annualRent = rentM ? parseFloat(rentM[1].replace(/,/g, '')) : null;
 
   const valueM = c.match(/Contract\s*Value\s*[:\.]?\s*([\d,]+(?:\.\d+)?)/i);
-  fields.value = valueM ? parseFloat(valueM[1].replace(/,/g, '')) : null;
+  fields.value = valueM ? parseFloat(valueM[1].replace(/,/g, '')) : fields.annualRent;
 
   if (!fields.annualRent) {
-    const amounts = c.match(/\b([\d,]{4,}\.\d{2})\b/g);
-    if (amounts && amounts.length >= 1) {
-      fields.annualRent = parseFloat(amounts[0].replace(/,/g, ''));
-      fields.value = amounts[1] ? parseFloat(amounts[1].replace(/,/g, '')) : fields.annualRent;
+    const amts = c.match(/\b([\d,]{4,}\.\d{2})\b/g);
+    if (amts?.length) {
+      fields.annualRent = parseFloat(amts[0].replace(/,/g, ''));
+      fields.value = amts[1] ? parseFloat(amts[1].replace(/,/g, '')) : fields.annualRent;
     }
   }
 
@@ -62,10 +76,10 @@ export function extractContractFields(text: string) {
   fields.type = typeM ? typeM[1] : 'Residential';
 
   const termM = c.match(/Contract\s*Term\s*[:\.]?\s*([\d]+\s*\w+)/i);
-  fields.term = termM ? termM[1].trim() : '1 Year';
+  fields.term = termM ? termM[1].trim() : '';
 
   const payMethodM = c.match(/Payment\s*Method\s*[:\.]?\s*([A-Za-z]+)/i);
-  fields.paymentMethod = payMethodM && payMethodM[1].toLowerCase() !== 'number' ? payMethodM[1].trim() : 'Cheque';
+  fields.paymentMethod = (payMethodM && !['number','of'].includes(payMethodM[1].toLowerCase())) ? payMethodM[1] : 'Cheque';
 
   const paymentsM = c.match(/Number\s*of\s*Payments\s*[:\.]?\s*(\d+)/i);
   fields.payments = paymentsM ? parseInt(paymentsM[1], 10) : 1;
@@ -74,137 +88,160 @@ export function extractContractFields(text: string) {
   fields.occupants = occupantsM ? parseInt(occupantsM[1], 10) : 1;
 
   const waterM = c.match(/Water\s*[&＆]\s*Electricity\s*Bill\s*[:\.]?\s*([A-Z]+)/i);
-  fields.waterElectricity = waterM && waterM[1] !== 'Pets' ? waterM[1] : 'TENANT';
+  fields.waterElectricity = (waterM && waterM[1] !== 'Pets') ? waterM[1] : 'TENANT';
 
   const petsM = c.match(/Pets\s*Allowed\s*[:\.]?\s*(Yes|No)/i);
   fields.petsAllowed = petsM ? petsM[1] : 'No';
 
-  // ─── LESSOR DETAILS (FIRST PARTY) ───────────────────────────────────
-  const licenseM = c.match(/CN-\d{7}/i) || c.match(/(?:License\s*No\.?)\s*([A-Z0-9\-]+)/i);
-  fields.lessorLicense = licenseM ? (licenseM[1] || licenseM[0]).toUpperCase() : '';
+  // ─── LESSOR (FIRST PARTY) ──────────────────────────────────────────────
+  const licenseM = lc.match(/\b((?:CN|IN|TL|BL|LIC)-?\d{5,10})\b/i) || c.match(/\b((?:CN|IN|TL|BL|LIC)-?\d{5,10})\b/i);
+  fields.lessorLicense = licenseM ? licenseM[1].toUpperCase().replace(/\s/g, '') : '';
 
-  // ─── SUPER ROBUST LESSOR COMPANY EXTRACTION ─────────────────────────
-  let lessorSection = text;
-  const lStart = text.search(/(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR)/i);
-  const lEnd = text.search(/(?:SECOND\s*PARTY|TENANT\s*DETAILS|PROPERTY\s*DETAILS|UNITS\s*DETAILS)/i);
-  if (lStart !== -1) {
-    lessorSection = lEnd > lStart ? text.substring(lStart, lEnd) : text.substring(lStart, lStart + 2500);
-  }
-  const inlineLessor = lessorSection.replace(/\s+/g, ' ').trim();
+  // Company: LLC/PJSC/WLL/EST/GROUP suffix or labeled "Company Name"
+  const corpPat   = /((?:\b[A-Z0-9&'.]+\b\s*){1,10}\b(?:LLC|L\.L\.C|PJSC|WLL|FZE|FZC|FZ-LLC|ESTABLISHMENT|EST|CORP|LTD|LIMITED|INC|GROUP)(?:\s*-\s*[A-Z0-9\s]+)?)/i;
+  const compLabelM = lc.match(/Company\s*Name\s*[:\.]?\s*-?\s*([A-Z0-9\s.&'()\/\-]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*\.1|$)/i);
+  const adjLicComp = lc.match(/(?:CN|IN)-\d+\s+([A-Z][A-Z\s.&'-]{4,80}(?:LLC|PJSC|WLL|EST|GROUP|LTD))/i);
+  const corpM      = lc.match(corpPat);
 
-  // 1. Direct match for known company pattern
-  const matchDirectComp = inlineLessor.match(/(INTERNATIONAL\s*CONSTRUCTION\s*CONTRACTING[^\.\n\r]*?(?:L\s*L\s*C|LLC)?)/i);
-  // 2. Match after 'Company Name' or 'Lessor Company' label
-  const labelCompM = inlineLessor.match(/(?:Company\s*Name|Lessor\s*Company|First\s*Party\s*Company|First\s*Party)\s*[:\.]?\s*([A-Z0-9\s\.\-&'\(\)\/]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*CN-|\s*IN-|\s*\.1|$)/i);
-  // 3. Match adjacent to License number
-  const licCompM = inlineLessor.match(/(?:CN|IN|LIC|LICENSE)[\s\-\:\.\d]+\s+([A-Z0-9\s\.\-&'\(\)\/]{4,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*\.1|$)/i);
-  // 4. Match company before business entity suffix (LLC, PJSC, WLL, FZE, FZC, EST, CORP, GROUP, etc.)
-  const cleanedLessorInline = inlineLessor
-    .replace(/^(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR\s*DETAILS|Email|Mobile\s*No|License\s*No|Company\s*Name|cLiiull\s*a4\s*pu|\-)+\s*/gi, '')
-    .replace(/CN-\d{5,8}\s*/gi, '');
-  const corpSuffixPattern = /((?:\b[A-Z0-9&'\.\-]+\b\s*){1,10}\b(?:LLC|L\s*\.\s*L\s*\.\s*C|L\s*L\s*C|PJSC|WLL|FZE|FZC|FZ-LLC|ESTABLISHMENT|EST|CORP|CORPORATION|LIMITED|INC|GROUP)(?:\s*-\s*[A-Z0-9\s]+(?:BRANCH)?)?)/i;
-  const bizCompM = cleanedLessorInline.match(corpSuffixPattern);
+  let compName = '';
+  if (compLabelM?.[1]?.trim() && !/^[-\s]+$/.test(compLabelM[1])) compName = compLabelM[1];
+  else if (adjLicComp?.[1]) compName = adjLicComp[1];
+  else if (corpM?.[1])      compName = corpM[1];
 
-  let compCandidate = '';
-  if (matchDirectComp && matchDirectComp[1]) {
-    compCandidate = matchDirectComp[1];
-  } else if (labelCompM && labelCompM[1] && labelCompM[1].trim().replace(/^[\-\s]+/, '') && labelCompM[1].trim() !== '-') {
-    compCandidate = labelCompM[1];
-  } else if (licCompM && licCompM[1] && licCompM[1].trim() !== '-') {
-    compCandidate = licCompM[1];
-  } else if (bizCompM && bizCompM[1]) {
-    compCandidate = bizCompM[1];
-  }
+  compName = compName
+    .replace(/L\s*\.\s*L\s*\.\s*C\.?/gi, 'LLC').replace(/L\s*L\s*C/gi, 'LLC')
+    .replace(/^(?:Company\s*Name|Email|Mobile\s*No|License\s*No|CN-\d+|IN-\d+)[:\s-]*/i, '')
+    .replace(/^(?:CN|IN|TL|BL|LIC)-?\d{5,10}\s+/i, '')
+    .replace(/\s+(?:Contact\s*Person|Full\s*Name|Mobile\s*No|Email|License\s*No).*$/i, '')
+    .replace(/^[^A-Za-z0-9]+/, '').replace(/\s+/g, ' ').replace(/\.$/, '').trim();
+  // Strip any leading license number (e.g. "CN-1048007 ") from company name
+  compName = compName.replace(/^(?:CN|IN|TL|BL|LIC)-?\d{3,10}\s+/i, '').trim();
+  fields.lessorCompany = compName;
 
-  let finalCompName = compCandidate.trim();
-  const cnMatchIdx = finalCompName.search(/\bCN-\d{5,8}\b/i);
-  if (cnMatchIdx !== -1) {
-    const m = finalCompName.match(/\bCN-\d{5,8}\b\s*(.*)/i);
-    if (m && m[1]) finalCompName = m[1];
-  }
+  // Lessor name — after "Contact Person" or "Full Name" in lessor section
+  const cpM    = lc.match(/Contact\s*Person\s*(?:Full\s*Name\s*)?([A-Z][A-Z\s]{4,70}?)(?=\s*Full\s*Name|\s*Mobile|\s*Email|\s*\*|$)/i);
+  const fnLesM = lc.match(/Full\s*Name\s+([A-Z][A-Z\s]{4,60}?)(?=\s*Mobile|\s*Email|\s*\*|$)/i);
+  const capsM  = lc.match(/\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\b/);
 
-  finalCompName = finalCompName.replace(/^(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR\s*DETAILS|Company\s*Name|Lessor\s*Company|First\s*Party\s*Company|First\s*Party|Company)\s*[:\.]?\s*/i, '');
-  finalCompName = finalCompName.replace(/^[^a-zA-Z0-9]+/, '');
-  finalCompName = finalCompName.replace(/\s+/g, ' ');
-  finalCompName = finalCompName.replace(/L\s*\.\s*L\s*\.\s*C\.?/gi, 'LLC').replace(/L\s*L\s*C/gi, 'LLC');
-  finalCompName = finalCompName.replace(/\s+(?:Contact\s*Person|Full\s*Name|Mobile\s*No|Email|License\s*No).*$/i, '');
-  finalCompName = finalCompName.replace(/\.$/, '').trim();
-
-  if (finalCompName && !finalCompName.includes('LLC') && (inlineLessor.includes('LLC') || inlineLessor.includes('L L C'))) {
-    if (!finalCompName.endsWith('LLC')) finalCompName += ' - LLC';
-  }
-  fields.lessorCompany = finalCompName;
-
-  const lessorNameM = c.match(/(SHINE\s*PILLAI\s*HARIDASAN\s*PILLAI(?:\s*SANTHA\s*KUMARI)?)/i) ||
-                      c.match(/Contact\s*Person\s*(?:Full\s*Name)?\s*([A-Z\s]{6,50}?)(?=\s*Mobile|\s*Email|\s*Full|\s*\*|$)/i);
-  let lName = lessorNameM ? lessorNameM[1].trim() : '';
-  lName = lName.replace(/^Jloiwl\s*nizall\s*/i, '').replace(/^Contact\s*Person\s*/i, '').replace(/^Full\s*Name\s*/i, '').trim();
+  let lName = (cpM?.[1] || fnLesM?.[1] || capsM?.[1] || '').trim();
+  lName = lName.replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s]*/i, '').trim();
+  lName = lName.replace(/\s+(?:Full\s*Name|Mobile|Email|SECOND|TENANT).*$/i, '').trim();
   fields.lessorName = lName;
 
-  const lMobileM = c.match(/(?:Mobile\s*No\.?|Mobile)?\s*(971588973810|971\d{8,9})/i);
-  fields.lessorMobile = lMobileM ? lMobileM[1] : '';
+  const lMobM   = lc.match(/\b(971\d{8,9})\b/);
+  fields.lessorMobile = lMobM?.[1] || '';
 
-  const lEmailM = c.match(/(shinepillaihs@gmail\.com)/i) || c.match(/([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i);
-  fields.lessorEmail = lEmailM ? lEmailM[1] : '';
+  const lEmailM = lc.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/);
+  fields.lessorEmail = lEmailM?.[1] || '';
 
-  // ─── TENANT DETAILS (SECOND PARTY) ──────────────────────────────────
-  const tEidM = c.match(/\b(784199816461760|784\d{12}|\d{15})\b/);
-  fields.tenantEmiratesId = tEidM ? tEidM[1] : '';
+  // ─── TENANT (SECOND PARTY) ─────────────────────────────────────────────
+  const eidM = tc.match(/\b(784\d{12})\b/) || c.match(/\b(784\d{12})\b/);
+  fields.tenantEmiratesId = eidM?.[1] || '';
 
-  const tNatM = c.match(/\b(India|Pakistan|Emirates|UAE|Egypt|Jordan|Lebanon|Philippines|UK|USA|Canada)\b/i);
-  fields.tenantNationality = tNatM && tNatM[1].toLowerCase() !== 'emirates' ? tNatM[1] : 'India';
+  // Nationality — comprehensive list
+  const nationalities = [
+    'Indian?','Pakistan(?:i)?','Bangladeshi?','Filipino?','Philippine',
+    'Egyptian?','Jordanian?','Lebanese?','Syrian?','Sri\\s*Lankan?',
+    'Nepali?','Kenyan?','Nigerian?','British','American','Canadian',
+    'Emirati','Saudi(?:\\s*Arabian?)?','Kuwaiti?','Bahraini?','Omani?','Qatari?',
+    'Turkish?','Iranian?','Iraqi?','Afghan(?:istani)?','Ethiopian?','Sudanese',
+    'Russian?','Chinese','(?:South\\s*)?Korean?',
+    'Kazakhstani?','Uzbek(?:istani)?','Tajik(?:istani)?','Kyrgyz(?:stani)?',
+    'Turkmen(?:istani)?','Azerbaijani?','Georgian?','Armenian?',
+    'Moroccan?','Tunisian?','Algerian?','Libyan?','Somali(?:an)?','Yemeni?',
+    'India','Pakistan','Bangladesh','Philippines','Egypt','Jordan','Lebanon',
+    'Syria','Nepal','Nigeria','UK','USA','Canada','UAE','Saudi Arabia',
+    'Kuwait','Bahrain','Oman','Qatar','Turkey','Iran','Iraq','Afghanistan',
+    'Ethiopia','Sudan','Russia','China','Kazakhstan','Uzbekistan','Tajikistan',
+    'Kyrgyzstan','Turkmenistan','Azerbaijan','Georgia','Armenia',
+    'Morocco','Tunisia','Algeria','Libya','Somalia','Yemen',
+  ];
+  const natRx = new RegExp(`\\b(${nationalities.join('|')})\\b`, 'i');
+  const natM  = tc.match(natRx) || c.match(natRx);
+  fields.tenantNationality = natM?.[1] || '';
 
-  const tMobM = c.match(/\b(971588300956|9715\d{8}|971\d{9})\b/);
-  fields.tenantMobile = tMobM ? tMobM[1] : '';
+  // Tenant mobile — UAE mobile NOT already assigned as lessor mobile
+  const allMobiles = [...(c.match(/\b(971\d{8,9})\b/g) || [])];
+  fields.tenantMobile = allMobiles.find(m => m !== fields.lessorMobile) || allMobiles[1] || allMobiles[0] || '';
 
-  const tEmailM = c.match(/(manuanna\s*:\s*mail\.com|manuanna43@gmail\.com|manuanna@gmail\.com|[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i);
-  if (tEmailM) {
-    fields.tenantEmail = tEmailM[1].replace(/:\s*/, '@').replace(/\s+/g, '');
-  } else {
-    fields.tenantEmail = '';
-  }
+  // Tenant email — email NOT already assigned as lessor email
+  const allEmails = [...(c.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [])];
+  fields.tenantEmail = allEmails.find(e => e !== fields.lessorEmail) || allEmails[1] || allEmails[0] || '';
 
-  const tNameM = c.match(/(Manu\s*Anna\s*l?ype\s*Vadakeneth)/i) ||
-                 c.match(/Full\s*Name\s*(?:manuanna[\s\S]*?)?([A-Z][a-zA-Z\s]{4,40})(?=\s*PROPERTY|\s*784|\s*India|\s*971)/i);
-  fields.tenantName = tNameM ? tNameM[1].trim() : '';
+  // Tenant name — multi-strategy
+  // Strategy 1: English name after EmiratesID (skip any Arabic)
+  const afterEidM  = tc.match(/784\d{12}[\s\S]{0,80}?([A-Z][a-z]+(?:\s+[A-Za-z]+){1,4})/);
+  // Strategy 2: English name after nationality keyword
+  const afterNatM  = tc.match(new RegExp(`(?:${nationalities.join('|')})\\s+([A-Z][a-z]+(?:\\s+[A-Za-z]+){1,4})`, 'i'));
+  // Strategy 3: "Full Name" label in tenant section (skip any Arabic block)
+  const fnTenantM  = tc.match(/Full\s*Name\s+(?:[\u0600-\u06FF\s]+)?([A-Z][a-z]+(?:\s+[A-Za-z]+){1,4})/i);
+  // Strategy 4: last proper mixed-case name in tenant section
+  const allNamesInTc = [...tc.matchAll(/\b([A-Z][a-z]{2,}(?:\s+[A-Za-z]{2,}){1,4})\b/g)];
+  const lastTcName = allNamesInTc.length ? allNamesInTc[allNamesInTc.length - 1][1] : '';
 
-  // ─── PROPERTY DETAILS ────────────────────────────────────────────────
-  const muniM = c.match(/(Abu\s*Dhabi\s*City)/i) || c.match(/Municipality\s*([A-Za-z\s]+?)(?=\s*Zone|\s*Sector|\s*ubagil)/i);
-  fields.municipality = muniM ? muniM[1].trim() : 'Abu Dhabi City';
+  let tName = (afterEidM?.[1] || afterNatM?.[1] || fnTenantM?.[1] || lastTcName || '').trim();
+  tName = tName.replace(/^(?:Full\s*Name|Nationality|Email|Mobile|EmiratesID)[:\s]*/i, '').trim();
+  // Strip leading nationality word if afterEidM swallowed it
+  const natStripRx = new RegExp(`^(?:${nationalities.join('|')})\\s+`, 'i');
+  tName = tName.replace(natStripRx, '').trim();
+  if (!tName.includes(' ') || tName.length < 5) tName = '';
+  fields.tenantName = tName;
 
-  const zoneM = c.match(/(Mohamed\s*Bin\s*Zayed\s*City)/i) || c.match(/Zone\s*([A-Za-z\s]+?)(?=\s*Sector|\s*aulj)/i);
-  fields.zone = zoneM ? zoneM[1].trim() : 'Mohamed Bin Zayed City';
+  // ─── PROPERTY DETAILS ──────────────────────────────────────────────────
+  const muniM = pc.match(/Municipality\s*[:\.]?\s*([A-Za-z\s]+?)(?=\s*Zone|\s*Sector|\s*Plot|\s*Road|$)/i);
+  fields.municipality = muniM?.[1]?.trim() || '';
 
-  const sectorM = c.match(/(ME9)/i) || c.match(/Sector\s*([A-Z0-9]+)/i);
-  fields.sector = sectorM ? sectorM[1].trim() : 'ME9';
+  const zoneM = pc.match(/Zone\s*[:\.]?\s*([A-Za-z\s]+?)(?=\s*Sector|\s*Plot|\s*Road|\s*Municipality|$)/i);
+  fields.zone = zoneM?.[1]?.trim() || '';
 
-  const plotM = c.match(/(C173)/i) || c.match(/Plot\s*No\.?\s*([A-Z0-9]+)/i);
-  fields.plot = plotM ? (plotM[1] || plotM[0]) : 'C173';
+  const sectorM = pc.match(/Sector\s*[:\.]?\s*([A-Z0-9]+)/i);
+  fields.sector = sectorM?.[1]?.trim() || '';
 
-  const propNameM = c.match(/(Sanad\s*properties)/i) || c.match(/Property\s*Name\s*([A-Za-z0-9\s]+?)(?=\s*Property\s*Type|\s*Sanad)/i);
-  fields.propertyName = propNameM ? propNameM[1].trim() : 'Sanad properties';
+  const plotM = pc.match(/Plot\s*No\.?\s*[:\.]?\s*([A-Z0-9\-]+)/i);
+  fields.plot = plotM?.[1]?.trim() || '';
 
-  fields.propertyType = c.includes('BUILDING') ? 'BUILDING' : 'BUILDING';
+  const plotAddrM = pc.match(/Plot\s*Address\s*[:\.]?\s*([A-Z0-9\-\/\.]+)/i);
+  fields.plotAddress = plotAddrM?.[1]?.trim() || '';
 
-  // ─── UNITS DETAILS ───────────────────────────────────────────────────
-  const premiseM = c.match(/\b(6391801694|\d{10})\b/);
-  fields.premise = premiseM ? premiseM[1] : '6391801694';
+  const propNameM = pc.match(/Property\s*Name\s*[:\.]?\s*([A-Za-z0-9][A-Za-z0-9\s\-\.]{2,59}?)(?=\s{2,}|\s*Property\s*Type|\s*Municipality|\s*Zone|\s*Building|\s*Plot|$)/i);
+  const rawPropName = propNameM?.[1]?.trim() || '';
+  // Deduplicate if same value repeated (multi-column PDF artifact)
+  const halfLen = Math.floor(rawPropName.length / 2);
+  const propHalf = rawPropName.slice(0, halfLen).trim();
+  fields.propertyName = (propHalf && rawPropName.slice(halfLen).trim().toLowerCase() === propHalf.toLowerCase())
+    ? propHalf : rawPropName;
 
-  fields.unitUsage = 'RESIDENTIAL';
+  const propTypeM = c.match(/Property\s*Type\s*[:\.]?\s*([A-Z]+)/i);
+  fields.propertyType = propTypeM?.[1] || 'BUILDING';
 
-  const roomsM = c.match(/No\.\s*of\s*rooms\s*(\d+)/i) || c.match(/rooms\s*(\d+)/i) || c.match(/\b(2)\b/);
-  fields.rooms = roomsM ? parseInt(roomsM[1], 10) : 2;
+  // ─── UNITS DETAILS ─────────────────────────────────────────────────────
+  const premiseM = uc.match(/(?:Premise|Property)\s*(?:No\.?|Number)?\s*[:\.]?\s*(\d{8,12})/i) || c.match(/\b(\d{10})\b/);
+  fields.premise = premiseM?.[1] || '';
 
-  fields.unitType = 'APARTMENT';
+  // Unit Usage: only from explicit label, not from generic 'c' fallback
+  const unitUsageM = uc.match(/Unit\s*Usage\s*[:\.]?\s*(RESIDENTIAL|COMMERCIAL|INDUSTRIAL|OFFICE)/i);
+  fields.unitUsage = unitUsageM?.[1]?.toUpperCase() || 'RESIDENTIAL';
 
-  const regM = c.match(/(UNT\d+)/i);
-  fields.unitRegNo = regM ? regM[1] : 'UNT308971';
+  const roomsM = uc.match(/No\.?\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)/i) || (unitsStart !== -1 ? null : c.match(/\bNo\.\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)\b/i));
+  fields.rooms = roomsM ? parseInt(roomsM[1], 10) : null;
 
-  const unitNoM = c.match(/(Flat\s*No\.?\s*\d+)/i) || c.match(/(Flat\s*\d+)/i);
-  fields.unitNumber = unitNoM ? unitNoM[1] : 'Flat No. 701';
+  // Unit type: only match known keywords, not generic labels
+  const unitTypeM = uc.match(/Unit\s*Type\s*[:\.]?\s*(APARTMENT|VILLA|STUDIO|OFFICE|SHOP|WAREHOUSE|FLOOR|RESIDENTIAL|COMMERCIAL)/i)
+                 || c.match(/\b(APARTMENT|VILLA|STUDIO|OFFICE|SHOP|WAREHOUSE|FLOOR)\b/i);
+  fields.unitType = unitTypeM?.[1]?.toUpperCase() || 'APARTMENT';
+
+  // Registration: only explicit UNT-pattern or reg label, not 10-digit premise number
+  const regM = uc.match(/(?:Unit\s*)?Reg(?:istration)?\s*No\.?\s*[:\.]?\s*([A-Z]{2,}\d+)/i) || c.match(/\b(UNT\d+)\b/i);
+  fields.unitRegNo = regM?.[1]?.toUpperCase() || '';
+
+  // Unit number: only match Flat/Apt + actual number, not generic "Unit" word
+  const unitNoM = uc.match(/(?:Flat|Apt\.?|Apartment)\s*No\.?\s*[:\.]?\s*([\d]+[\w\-\/]*)/i)
+               || c.match(/(?:Flat|Apt\.?)\s*No\.?\s*[:\.]?\s*([\d]+[\w\-\/]*)/i);
+  fields.unitNumber = unitNoM ? `Flat No. ${unitNoM[1]}` : '';
 
   return fields;
 }
+
 
 @Controller('api/ocr-pdf')
 export class OcrController {
