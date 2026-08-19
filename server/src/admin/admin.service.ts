@@ -12,16 +12,17 @@ export class AdminService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    let admin = await this.adminRepository.findOne({ where: { username: 'admin' } });
-    if (!admin) {
-      admin = new Admin();
+    // Only create default admin if no admin account exists yet (first boot only)
+    // NEVER reset credentials on restart — user's custom password must be preserved
+    const exists = await this.adminRepository.findOne({ where: { username: 'admin' } });
+    if (!exists) {
+      const admin = new Admin();
       admin.username = 'admin';
-    }
-    admin.password = 'admin123';
-    if (!admin.token) {
+      admin.password = 'admin123';
       admin.token = 'super-secret-admin-token';
+      await this.adminRepository.save(admin);
     }
-    await this.adminRepository.save(admin);
+  }
   }
 
   async findByUsername(username: string): Promise<Admin | null> {
