@@ -21,8 +21,12 @@ export class AdminService implements OnModuleInit {
       admin.password = 'admin123';
       admin.token = 'super-secret-admin-token';
       await this.adminRepository.save(admin);
+    } else if (process.env.RESET_ADMIN_PASSWORD) {
+      // Emergency reset: set RESET_ADMIN_PASSWORD env var in Coolify to override password
+      exists.password = process.env.RESET_ADMIN_PASSWORD;
+      await this.adminRepository.save(exists);
+      console.log('[AdminService] Admin password reset via RESET_ADMIN_PASSWORD env var');
     }
-  }
   }
 
   async findByUsername(username: string): Promise<Admin | null> {
