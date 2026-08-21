@@ -1,4 +1,5 @@
 require('reflect-metadata');
+require('pg');
 const path = require('path');
 
 const serverNodeModules = path.join(__dirname, '../server/node_modules');

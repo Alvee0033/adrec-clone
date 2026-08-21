@@ -11,6 +11,7 @@ import { OcrModule } from './ocr/ocr.module';
 import { Contract } from './contracts/contract.entity';
 import { Admin } from './admin/admin.entity';
 import * as fs from 'fs';
+const pg = require('pg');
 
 const distPath = join(process.cwd(), '..', 'dist');
 
@@ -18,6 +19,7 @@ const distPath = join(process.cwd(), '..', 'dist');
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
+      driver: pg,
       ...(process.env.POSTGRES_URL
         ? {
             url: process.env.POSTGRES_URL,
@@ -27,14 +29,14 @@ const distPath = join(process.cwd(), '..', 'dist');
           }
         : {
             host: process.env.DB_HOST || 'localhost',
-            port: parseInt(process.env.DB_PORT || '5433', 10),
-            username: process.env.DB_USER || 'farm_ai_user',
+            port: parseInt(process.env.DB_PORT || '5436', 10),
+            username: process.env.DB_USER || 'adrec_user',
             password: process.env.DB_PASSWORD || 'password123',
             database: process.env.DB_NAME || 'adrec_db',
             ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
           }),
       entities: [Contract, Admin],
-      synchronize: true, // Auto-create tables in dev, might want migrations for prod
+      synchronize: false,
     }),
     AdminModule,
     AuthModule,
