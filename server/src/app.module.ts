@@ -40,8 +40,8 @@ const distPath = join(process.cwd(), '..', 'dist');
     AuthModule,
     ContractsModule,
     OcrModule,
-    // Conditionally serve static files if dist exists
-    ...(fs.existsSync(distPath) ? [
+    // Conditionally serve static files if dist exists and not on Vercel (Vercel CDN handles static pages)
+    ...(!process.env.VERCEL && fs.existsSync(distPath) ? [
       ServeStaticModule.forRoot({
         rootPath: distPath,
         renderPath: '/',

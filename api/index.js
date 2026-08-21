@@ -4,6 +4,8 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
+process.env.VERCEL = '1';
+
 const appModule = require(path.join(__dirname, '../server/dist/app.module.js'));
 const AppModule = appModule.AppModule || appModule;
 
@@ -12,7 +14,10 @@ let cachedServer;
 async function bootstrap() {
   if (!cachedServer) {
     const expressApp = express();
-    const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
+    const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
+      logger: ['error', 'warn', 'log'],
+      abortOnError: false,
+    });
     
     app.enableCors({ origin: true, credentials: true });
     app.use(express.json({ limit: '15mb' }));
