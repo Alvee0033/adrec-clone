@@ -12,7 +12,6 @@ const TEAL   = rgb(0.06, 0.38, 0.48);   // header rows
 const LGREY  = rgb(0.94, 0.96, 0.98);   // alternate rows
 const WHITE  = rgb(1, 1, 1);
 const BLACK  = rgb(0, 0, 0);
-const BLUE   = rgb(0.09, 0.39, 0.67);   // data values
 const LINE   = rgb(0.1, 0.1, 0.1);      // borders
 
 function drawRect(page, x, y, w, h, fill, stroke = null, lineWidth = 0.5) {
@@ -26,18 +25,33 @@ function drawLine(page, x1, y1, x2, y2, lw = 0.5) {
 }
 
 function drawText(page, text, x, y, font, size, color = BLACK) {
-  if (text !== null && text !== undefined) {
+  if (text !== null && text !== undefined && text !== '') {
     page.drawText(String(text), { x, y, font, size, color });
   }
 }
 
-function cell(page, text, x, y, w, h, font, size = 8, color = BLACK,
-              fill = WHITE, textOffX = 4, textOffY = 3, rightBorder = true, bottomBorder = true) {
+function cell(page, text, x, y, w, h, font, size = 8.5, color = BLACK,
+              fill = WHITE, align = 'left', textOffX = 4, rightBorder = true, bottomBorder = true) {
   drawRect(page, x, y, w, h, fill);
   if (rightBorder) drawLine(page, x + w, y, x + w, y + h);
   if (bottomBorder) drawLine(page, x, y, x + w, y);
-  if (text !== null && text !== undefined)
-    drawText(page, text, x + textOffX, y + textOffY, font, size, color);
+  
+  if (text !== null && text !== undefined && text !== '') {
+    const str = String(text);
+    const tw = font.widthOfTextAtSize(str, size);
+    
+    let drawX = x + textOffX;
+    if (align === 'center') {
+      drawX = x + (w - tw) / 2;
+    } else if (align === 'right') {
+      drawX = x + w - tw - textOffX;
+    }
+    
+    // Vertically center (approximate baseline adjustment)
+    const drawY = y + (h / 2) - (size / 3);
+    
+    drawText(page, str, drawX, drawY, font, size, color);
+  }
 }
 
 export async function buildPDF(contract) {
@@ -59,13 +73,14 @@ export async function buildPDF(contract) {
   const W = page.getWidth();
 
   const formatNum = v => {
+    if (v === null || v === undefined || v === '') return '';
     if (typeof v === 'number') {
       return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     if (typeof v === 'string' && !isNaN(parseFloat(v.replace(/,/g, '')))) {
       return parseFloat(v.replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    return String(v || '62,000.00');
+    return String(v);
   };
 
   const LEFT  = 30;
@@ -86,9 +101,9 @@ export async function buildPDF(contract) {
   drawLine(page, LEFT, Y, LEFT + FULL, Y);
   drawLine(page, LEFT, Y, LEFT, Y + HDR_H);
   drawLine(page, LEFT + FULL, Y, LEFT + FULL, Y + HDR_H);
-  drawText(page, 'CONTRACT DETAILS', LEFT + 6, Y + 4, fontB, 8.5, WHITE);
+  drawText(page, 'CONTRACT DETAILS', LEFT + 6, Y + 4.5, fontB, 8.5, WHITE);
 
-  // 6 Specified Fields Mapping
+  // ONLY FILLING THE FIRST 8 FIELDS AS REQUESTED, LEAVING THE REST COMPLETELY BLANK
   const targetRows = [
     ['Contract No.',          contract.number || '202401451011',                   true],
     ['Issue Date',            contract.issueDate || '2025-06-28',                 false],
@@ -96,15 +111,15 @@ export async function buildPDF(contract) {
     ['End Date',              contract.endDate || '2026-08-20',                   false],
     ['Annual Rent',           formatNum(contract.annualRent || 62000),             true],
     ['Contract Value',        formatNum(contract.value || contract.annualRent || 62000), false],
-    ['Security Deposit',      contract.securityDeposit ? formatNum(contract.securityDeposit) : '---', true],
+    ['Security Deposit',      contract.securityDeposit ? formatNum(contract.securityDeposit) : '', true],
     ['Contract Type',         contract.type || 'Residential',                      false],
-    ['Grace Period',          '---',                                               true],
-    ['Contract Term',         contract.term || '1 Year',                           false],
-    ['Payment Method',        contract.paymentMethod || 'Cheque',                  true],
-    ['Number of Payments',    String(contract.payments || 1),                      false],
-    ['Number of Occupants',   String(contract.occupants || 1),                     true],
-    ['Water & Electricity Bill', contract.waterElectricity || 'TENANT',            false],
-    ['Pets Allowed',          contract.petsAllowed || 'No',                        true],
+    ['Grace Period',          '',                                                  true],
+    ['Contract Term',         '',                                                  false],
+    ['Payment Method',        '',                                                  true],
+    ['Number of Payments',    '',                                                  false],
+    ['Number of Occupants',   '',                                                  true],
+    ['Water & Electricity Bill', '',                                               false],
+    ['Pets Allowed',          '',                                                  true],
   ];
 
   const tableH1 = targetRows.length * ROW_H;
@@ -112,16 +127,16 @@ export async function buildPDF(contract) {
   drawLine(page, LEFT + FULL, Y - tableH1, LEFT + FULL, Y);
   drawLine(page, LEFT, Y - tableH1, LEFT + FULL, Y - tableH1);
 
-  targetRows.forEach(([en, val, shade], i) => {
+  targetRows.forEach(([en, val, isWhite], i) => {
     const ry = Y - (i + 1) * ROW_H;
-    const bg = shade ? LGREY : WHITE;
+    const bg = isWhite ? WHITE : LGREY; // Fixing alternating rows
 
     // label cell
-    cell(page, en,  LEFT,          ry, C1, ROW_H, fontR, 7.5, BLACK, bg, 4, 4);
-    // value cell
-    cell(page, val, LEFT + C1,     ry, C2, ROW_H, fontB, 8,   BLUE,  bg, 6, 4);
+    cell(page, en,  LEFT,          ry, C1, ROW_H, fontR, 8.5, BLACK, bg, 'left', 4);
+    // value cell (CENTERED, NORMAL WEIGHT, BLACK)
+    cell(page, val, LEFT + C1,     ry, C2, ROW_H, fontR, 8.5, BLACK, bg, 'center');
     // arabic cell
-    cell(page, null, LEFT + C1 + C2, ry, C3, ROW_H, fontR, 7.5, BLACK, bg);
+    cell(page, null, LEFT + C1 + C2, ry, C3, ROW_H, fontR, 8.5, BLACK, bg);
 
     drawLine(page, LEFT + C1,       ry, LEFT + C1,       ry + ROW_H);
     drawLine(page, LEFT + C1 + C2,  ry, LEFT + C1 + C2,  ry + ROW_H);
@@ -140,8 +155,8 @@ if (process.argv[2] === '--test') {
     value: 62000,
   };
   buildPDF(contract).then(bytes => {
-    fs.writeFileSync(path.join(assetsDir, 'test_output.pdf'), bytes);
-    console.log('Successfully generated PDF with specified 6 contract detail fields!');
+    fs.writeFileSync(path.join(assetsDir, 'perfect_test.pdf'), bytes);
+    console.log('Successfully generated PERFECT PDF with only first 8 fields!');
   }).catch(err => {
     console.error('Error generating PDF:', err);
   });
