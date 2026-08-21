@@ -19,13 +19,19 @@ const distPath = join(process.cwd(), '..', 'dist');
     TypeOrmModule.forRoot({
       type: 'postgres',
       ...(process.env.POSTGRES_URL
-        ? { url: process.env.POSTGRES_URL, ssl: { rejectUnauthorized: false } }
+        ? {
+            url: process.env.POSTGRES_URL,
+            ssl: process.env.DB_SSL === 'true' || process.env.POSTGRES_URL.includes('sslmode=require')
+              ? { rejectUnauthorized: false }
+              : false,
+          }
         : {
             host: process.env.DB_HOST || 'localhost',
             port: parseInt(process.env.DB_PORT || '5433', 10),
             username: process.env.DB_USER || 'farm_ai_user',
             password: process.env.DB_PASSWORD || 'password123',
             database: process.env.DB_NAME || 'adrec_db',
+            ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
           }),
       entities: [Contract, Admin],
       synchronize: true, // Auto-create tables in dev, might want migrations for prod
