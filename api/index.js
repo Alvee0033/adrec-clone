@@ -1,10 +1,18 @@
-const { NestFactory } = require('@nestjs/core');
-const { ExpressAdapter } = require('@nestjs/platform-express');
-const express = require('express');
-const cookieParser = require('cookie-parser');
+require('reflect-metadata');
 const path = require('path');
 
+const serverNodeModules = path.join(__dirname, '../server/node_modules');
+require('module').globalPaths.unshift(serverNodeModules);
+
+const { NestFactory } = require(path.join(serverNodeModules, '@nestjs/core'));
+const { ExpressAdapter } = require(path.join(serverNodeModules, '@nestjs/platform-express'));
+const express = require('express');
+const cookieParser = require('cookie-parser');
+
 process.env.VERCEL = '1';
+if (!process.env.POSTGRES_URL && process.env.DB_HOST) {
+  process.env.POSTGRES_URL = `postgres://${process.env.DB_USER || 'adrec_user'}:${process.env.DB_PASSWORD || 'password123'}@${process.env.DB_HOST}:${process.env.DB_PORT || '5436'}/${process.env.DB_NAME || 'adrec_db'}`;
+}
 
 const appModule = require(path.join(__dirname, '../server/dist/app.module.js'));
 const AppModule = appModule.AppModule || appModule;
