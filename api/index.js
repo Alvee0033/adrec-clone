@@ -1,9 +1,10 @@
-const { NestFactory } = require('../server/node_modules/@nestjs/core/index.js');
-const { ExpressAdapter } = require('../server/node_modules/@nestjs/platform-express/index.js');
+const { NestFactory } = require('@nestjs/core');
+const { ExpressAdapter } = require('@nestjs/platform-express');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 
-const appModule = require('../server/dist/app.module.js');
+const appModule = require(path.join(__dirname, '../server/dist/app.module.js'));
 const AppModule = appModule.AppModule || appModule;
 
 let cachedServer;
@@ -24,6 +25,14 @@ async function bootstrap() {
 }
 
 module.exports = async function (req, res) {
-  const server = await bootstrap();
-  server(req, res);
+  try {
+    const server = await bootstrap();
+    return server(req, res);
+  } catch (err) {
+    console.error('Serverless Execution Error:', err);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: err.message, stack: err.stack }));
+  }
 };
+
