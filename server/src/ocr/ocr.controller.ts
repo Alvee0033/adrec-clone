@@ -192,13 +192,15 @@ export function extractContractFields(text: string) {
   const natM  = tc.match(natRx) || c.match(natRx);
   fields.tenantNationality = natM?.[1] || '';
 
-  // Tenant mobile — UAE mobile NOT already assigned as lessor mobile
+  // Tenant mobile — search tenant section first, then fallback to global
+  const tcMobiles = [...(tc.match(/\b(971\d{8,9})\b/g) || [])];
   const allMobiles = [...(c.match(/\b(971\d{8,9})\b/g) || [])];
-  fields.tenantMobile = allMobiles.find(m => m !== fields.lessorMobile) || allMobiles[1] || allMobiles[0] || '';
+  fields.tenantMobile = tcMobiles[0] || allMobiles.find(m => m !== fields.lessorMobile) || allMobiles[1] || allMobiles[0] || '';
 
-  // Tenant email — email NOT already assigned as lessor email
+  // Tenant email — search tenant section first, then fallback to global
+  const tcEmails = [...(tc.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [])];
   const allEmails = [...(c.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [])];
-  const tEmailRaw = allEmails.find(e => e !== fields.lessorEmail) || allEmails[1] || allEmails[0] || '';
+  const tEmailRaw = tcEmails[0] || allEmails.find(e => e.toLowerCase() !== fields.lessorEmail.toLowerCase()) || allEmails[1] || allEmails[0] || '';
   fields.tenantEmail = tEmailRaw ? tEmailRaw.replace(/^(?:Email|Mail)[:\s]*/i, '').trim() : '';
 
   // Tenant name — universal multi-strategy (works for ALL CAPS, Title Case, and Mixed Case)
