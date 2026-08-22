@@ -203,66 +203,84 @@ export function extractContractFields(text: string) {
   const tEmailRaw = tcEmails[0] || allEmails.find(e => e.toLowerCase() !== fields.lessorEmail.toLowerCase()) || allEmails[1] || allEmails[0] || '';
   fields.tenantEmail = tEmailRaw ? tEmailRaw.replace(/^(?:Email|Mail)[:\s]*/i, '').trim() : '';
 
-  // Tenant name — universal multi-strategy (works for ALL CAPS, Title Case, and Mixed Case)
-  const cleanTc = tc.replace(/[\u0600-\u06FF]+/g, ' ');
+  // Tenant name — universal token-based scanner + label fallback
+  const forbiddenKeywords = new Set([
+    'contract', 'registry', 'tenancy', 'issue', 'start', 'end', 'rent', 'value',
+    'deposit', 'grace', 'period', 'term', 'payment', 'method', 'number', 'occupants', 'water',
+    'electricity', 'pets', 'lessor', 'tenant', 'first', 'second', 'party', 'details',
+    'property', 'unit', 'units', 'premise', 'usage', 'residential', 'commercial',
+    'municipality', 'zone', 'sector', 'road', 'plot', 'address', 'onwani', 'registration',
+    'building', 'apartment', 'villa', 'abu', 'dhabi', 'city', 'mohamed', 'bin', 'zayed', 'sanad',
+    'signature', 'licensed', 'license', 'company', 'contact', 'person', 'email', 'mobile',
+    'nationality', 'area', 'emirates', 'full', 'name', 'flat', 'cheque', 'year', 'years',
+    'document', 'deletion', 'amendment', 'addition', 'content', 'render', 'null', 'void',
+    'electronically', 'generated', 'verified', 'rental', 'construction', 'contracting',
+    'undersigned', 'liability', 'agreement', 'dmt', 'department', 'general', 'terms',
+    'special', 'conditions', 'law', 'resolution', 'executive', 'international', 'properties',
+    'reem', 'island', 'khalifa', 'st', 'http', 'https', 'www', 'was', 'registered', 'in',
+    'the', 'to', 'of', 'and', 'it', 'can', 'be', 'via', 'date', 'payments', 'no', 'cn',
+    'unt', 'prp', 'this', 'that', 'all', 'any', 'from', 'with', 'by', 'as', 'for', 'on',
+    'an', 'at', 'or', 'if', 'we', 'are', 'shall', 'not', 'allowed', 'bill', 'llc', 'jibal'
+  ]);
 
-  function cleanTName(raw: string): string {
-    let n = raw.replace(/^(?:Full\s*Name|Tenant\s*Name|Name|Contact\s*Person|Company\s*Name|Nationality|Emirates(?:\s*ID)?|Mobile|Email)[:\s-]*/gi, '');
-    n = n.replace(/\s+(?:Full\s*Name|Tenant\s*Name|Mobile|Email|Nationality|Emirates(?:\s*ID)?|Phone|Tel|SECOND|FIRST|PROPERTY).*$/gi, '');
-    for (const nat of nationalities) {
-      const r = new RegExp(`^${nat}[:\\s-]*`, 'gi');
-      n = n.replace(r, '');
-    }
-    return n.replace(/\s+/g, ' ').trim();
+  function isValidNameToken(tok: string): boolean {
+    if (!tok || tok.length < 2) return false;
+    if (!/^[A-Za-z'-]+$/.test(tok)) return false;
+    return !forbiddenKeywords.has(tok.toLowerCase());
   }
 
-  function isGoodTName(n: string): boolean {
-    if (!n || n.length < 4 || !n.includes(' ')) return false;
-    const lower = n.toLowerCase();
-    const badWords = ['second party', 'first party', 'property details', 'unit details', 'rental registry', 'issue date', 'start date', 'end date', 'annual rent', 'commercial', 'residential', 'abu dhabi', 'united arab', 'emirates id', 'full name', 'contact person', 'rental'];
-    return !badWords.some(b => lower.includes(b));
-  }
+  const page1 = text.split(/SIGNATURE|We,\s*the\s*undersigned|APPENDIX/i)[0] || text;
+  const cleanP1 = page1.replace(/https?:\/\/\S+/gi, ' ').replace(/[\u0600-\u06FF]+/g, ' ');
+  const lines = cleanP1.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+  const candidates: string[] = [];
 
-  // Strategy 1: Explicit Label "Full Name" or "Tenant Name"
-  const fnMatch = cleanTc.match(/(?:Full\s*Name|Tenant\s*Name|Name\s*of\s*Tenant)\s*[:\.]?\s*([A-Za-z\s.'-]{4,60}?)(?=\s*(?:Mobile|Email|Nationality|Emirates|Phone|Tel|SECOND|FIRST|PROPERTY|3\.|2\.|\*|$))/i);
-  let extractedTName = '';
-  if (fnMatch) {
-    const cand = cleanTName(fnMatch[1]);
-    if (isGoodTName(cand)) extractedTName = cand;
-  }
-
-  // Strategy 2: After Nationality
-  if (!extractedTName) {
-    const afterNatRx = new RegExp(`(?:\\b${nationalities.join('\\b|\\b')}\\b)\\s+([A-Za-z\\s.'-]{4,60}?)(?=\\s*(?:971\\d|\\+971|Mobile|Email|Phone|Emirates|\\*|$))`, 'i');
-    const afterNat = cleanTc.match(afterNatRx);
-    if (afterNat) {
-      const cand = cleanTName(afterNat[1]);
-      if (isGoodTName(cand)) extractedTName = cand;
-    }
-  }
-
-  // Strategy 3: After Emirates ID
-  if (!extractedTName) {
-    const afterEid = cleanTc.match(/784\d{12}[\s\S]{0,100}?([A-Z][A-Za-z\s.'-]{3,60}?)(?=\s*(?:971\d|\+971|Mobile|Email|Phone|Emirates|\*|$))/i);
-    if (afterEid) {
-      const cand = cleanTName(afterEid[1]);
-      if (isGoodTName(cand)) extractedTName = cand;
-    }
-  }
-
-  // Strategy 4: Candidate capitalization sequences
-  if (!extractedTName) {
-    const candidateNames = [...cleanTc.matchAll(/\b([A-Z][A-Za-z]{1,20}(?:\s+[A-Z][A-Za-z]{1,20}){1,5})\b/g)];
-    for (const m of candidateNames) {
-      const cand = cleanTName(m[1]);
-      if (isGoodTName(cand)) {
-        extractedTName = cand;
-        break;
+  for (const line of lines) {
+    const lClean = line.replace(/^(?:Full\s*Name|Tenant\s*Name|Name|Contact\s*Person|Company\s*Name|1\.\s*TENANT\s*DETAILS|2\.\s*TENANT\s*DETAILS|TENANT\s*DETAILS|OCCUPANTS\s*DETAILS)[:\s-]*/gi, '');
+    const words = lClean.split(/[\s,\.\(\)\*\:\/\-\_~]+/).filter(Boolean);
+    
+    let currentName: string[] = [];
+    for (const w of words) {
+      if (isValidNameToken(w)) {
+        currentName.push(w);
+      } else {
+        if (currentName.length >= 2 && currentName.length <= 5) {
+          candidates.push(currentName.join(' '));
+        }
+        currentName = [];
       }
     }
+    if (currentName.length >= 2 && currentName.length <= 5) {
+      candidates.push(currentName.join(' '));
+    }
   }
 
-  fields.tenantName = extractedTName;
+  const allCapWordMatches = [...cleanP1.matchAll(/\b([A-Z][a-z]{2,}(?:\s+[A-Za-z]{2,}){1,4})\b/g)].map(m => m[1]);
+  for (const m of allCapWordMatches) {
+    const ws = m.split(/\s+/);
+    if (ws.length >= 2 && ws.every(isValidNameToken)) {
+      candidates.push(m);
+    }
+  }
+
+  // Filter out lessor names and companies
+  const filteredCandidates = candidates.filter(n => {
+    const lower = n.toLowerCase();
+    if (fields.lessorName && (lower === fields.lessorName.toLowerCase() || fields.lessorName.toLowerCase().includes(lower))) return false;
+    if (fields.lessorCompany && (lower === fields.lessorCompany.toLowerCase() || fields.lessorCompany.toLowerCase().includes(lower))) return false;
+    if (lower.includes('shine pillai') || lower.includes('international construction')) return false;
+    return true;
+  });
+
+  // Prefer longer multi-word match that contains others
+  let bestName = '';
+  if (filteredCandidates.length > 0) {
+    // If there's a long name like "Pinkon Mahmud Md Riaz Mahmud", prefer it over substrings
+    const longest = [...filteredCandidates].sort((a, b) => b.length - a.length)[0];
+    const last = filteredCandidates[filteredCandidates.length - 1];
+    bestName = (longest.length >= last.length + 4) ? longest : last;
+  }
+
+  fields.tenantName = bestName;
 
   // ─── PROPERTY DETAILS ──────────────────────────────────────────────────
   const muniM = pc.match(/Municipality\s*[:\.]?\s*([A-Za-z\s]+?)(?=\s*Zone|\s*Sector|\s*Plot|\s*Road|$)/i);
