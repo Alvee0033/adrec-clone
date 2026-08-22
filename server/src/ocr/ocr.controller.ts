@@ -276,8 +276,8 @@ export function extractContractFields(text: string) {
   if (filteredCandidates.length > 0) {
     // If there's a long name like "Pinkon Mahmud Md Riaz Mahmud", prefer it over substrings
     const longest = [...filteredCandidates].sort((a, b) => b.length - a.length)[0];
-    const last = filteredCandidates[filteredCandidates.length - 1];
-    bestName = (longest.length >= last.length + 4) ? longest : last;
+    const first = filteredCandidates[0]; // primary tenant is always listed FIRST in ADREC contracts
+    bestName = (longest.length >= first.length + 4) ? longest : first;
   }
 
   fields.tenantName = bestName;
