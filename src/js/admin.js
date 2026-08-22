@@ -56,6 +56,41 @@ document.addEventListener('DOMContentLoaded', () => {
     return { Authorization: token, ...extra };
   }
 
+  function showToast(message, type = 'info', duration = 3000) {
+    let container = document.getElementById('adminToastContainer');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'adminToastContainer';
+      container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:380px;';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    const bg = type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : '#2563EB';
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+    toast.style.cssText = `background:${bg};color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.3);font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;pointer-events:auto;transition:all 0.25s ease;`;
+    toast.innerHTML = `<span style="font-size:16px;font-weight:bold;">${icon}</span><span>${message}</span>`;
+    container.appendChild(toast);
+
+    const remove = () => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      setTimeout(() => toast.remove(), 250);
+    };
+
+    if (duration > 0) setTimeout(remove, duration);
+
+    return {
+      update: (newMsg, newType = type) => {
+        const newBg = newType === 'success' ? '#059669' : newType === 'error' ? '#DC2626' : '#2563EB';
+        const newIcon = newType === 'success' ? '✓' : newType === 'error' ? '✕' : 'ℹ';
+        toast.style.background = newBg;
+        toast.innerHTML = `<span style="font-size:16px;font-weight:bold;">${newIcon}</span><span>${newMsg}</span>`;
+      },
+      dismiss: remove,
+    };
+  }
+
   function clearPendingPdf() {
     if (pendingPdfBlobUrl) {
       URL.revokeObjectURL(pendingPdfBlobUrl);
@@ -798,23 +833,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (pendingPdfFile) {
-        try {
-          await uploadPdfToServer(number, pendingPdfFile, (msg) => {
-            if (saveBtn) saveBtn.textContent = msg;
-          });
-          clearPendingPdf();
-        } catch (uploadErr) {
-          console.error(uploadErr);
-          alert(`Contract saved, but PDF upload failed: ${uploadErr.message}`);
-          await loadContractsList();
-          window.location.hash = '#/contracts';
-          return;
-        }
-      }
+      // Optimistically update local cache and table UI instantly
+      contractsCache[number] = { ...(contractsCache[number] || {}), ...payload };
+      renderContractsTable(contractsCache);
+      updateMetrics(contractsCache);
 
-      await loadContractsList();
+      // Instant UI switch to list view
+      showToast(`Contract #${number} saved successfully!`, 'success', 3000);
+      const pdfToUpload = pendingPdfFile;
+      clearPendingPdf();
       window.location.hash = '#/contracts';
+
+      // Background PDF upload if a file is attached (never blocks the user)
+      if (pdfToUpload) {
+        (async () => {
+          const syncToast = showToast(`Syncing PDF for #${number} to storage…`, 'info', 0);
+          try {
+            await uploadPdfToServer(number, pdfToUpload, (msg) => {
+              syncToast.update(`PDF #${number}: ${msg}`, 'info');
+            });
+            syncToast.update(`PDF for #${number} synced to MinIO!`, 'success');
+            setTimeout(() => syncToast.dismiss(), 3500);
+
+            if (contractsCache[number]) {
+              contractsCache[number].pdfUrl = `/api/contracts/${number}/pdf`;
+            }
+          } catch (uploadErr) {
+            console.error('Background PDF upload failed:', uploadErr);
+            syncToast.update(`PDF sync failed: ${uploadErr.message}`, 'error');
+            setTimeout(() => syncToast.dismiss(), 6000);
+          }
+        })();
+      }
     } catch (err) {
       console.error(err);
       alert('Network error trying to save contract.');
