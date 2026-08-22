@@ -21,12 +21,12 @@ export class StorageService {
 
     this.s3 = new S3Client({
       endpoint: this.endpoint,
-      region: 'us-east-1', // MinIO ignores this but SDK requires it
+      region: 'us-east-1',
       credentials: {
         accessKeyId: process.env.MINIO_ACCESS_KEY || 'allibasadmin',
         secretAccessKey: process.env.MINIO_SECRET_KEY || 'Allibas@Minio2026',
       },
-      forcePathStyle: true, // required for MinIO (non-AWS)
+      forcePathStyle: true,
     });
   }
 
@@ -39,8 +39,47 @@ export class StorageService {
       ContentType: 'application/pdf',
     });
     await this.s3.send(command);
-    // Return public URL
     return `${this.endpoint}/${this.bucket}/${key}`;
+  }
+
+  async uploadChunkPart(contractId: string, chunkIndex: number, buffer: Buffer): Promise<void> {
+    const key = `contracts/chunks/${contractId}.part_${chunkIndex}`;
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: 'application/octet-stream',
+    });
+    await this.s3.send(command);
+  }
+
+  async assembleChunks(contractId: string, totalChunks: number): Promise<string> {
+    const parts: Buffer[] = [];
+    for (let i = 0; i < totalChunks; i++) {
+      const key = `contracts/chunks/${contractId}.part_${i}`;
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      });
+      const response = await this.s3.send(command);
+      const stream = response.Body as Readable;
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      parts.push(Buffer.concat(chunks));
+    }
+
+    const fullBuffer = Buffer.concat(parts);
+    const finalUrl = await this.uploadPdf(contractId, fullBuffer);
+
+    // Clean up temporary chunk parts in background
+    for (let i = 0; i < totalChunks; i++) {
+      const key = `contracts/chunks/${contractId}.part_${i}`;
+      this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key })).catch(() => {});
+    }
+
+    return finalUrl;
   }
 
   async downloadPdf(contractId: string): Promise<Buffer | null> {
@@ -72,16 +111,6 @@ export class StorageService {
       await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
     } catch (err: any) {
       this.logger.warn(`MinIO delete error for ${contractId}:`, err?.message);
-    }
-  }
-
-  async exists(contractId: string): Promise<boolean> {
-    const key = `contracts/${contractId}.pdf`;
-    try {
-      await this.s3.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
-      return true;
-    } catch {
-      return false;
     }
   }
 

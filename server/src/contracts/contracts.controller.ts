@@ -11,24 +11,6 @@ import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
-interface ChunkUploadSession {
-  totalChunks: number;
-  chunks: Map<number, Buffer>;
-  updatedAt: number;
-}
-
-const activeChunkUploads = new Map<string, ChunkUploadSession>();
-
-// Cleanup stale chunk sessions older than 10 minutes
-setInterval(() => {
-  const cutoff = Date.now() - 10 * 60 * 1000;
-  for (const [id, sess] of activeChunkUploads.entries()) {
-    if (sess.updatedAt < cutoff) {
-      activeChunkUploads.delete(id);
-    }
-  }
-}, 60 * 1000);
-
 @Controller('api/contracts')
 export class ContractsController {
   constructor(
@@ -98,7 +80,7 @@ export class ContractsController {
     try {
       // Delete PDF from MinIO
       await this.storageService.deletePdf(id);
-      // Try local file cleanup too (VPS fallback)
+      // Local fallback cleanup
       const pdfPath = path.join(process.cwd(), 'data', 'pdfs', `${id}.pdf`);
       if (fs.existsSync(pdfPath)) { try { fs.unlinkSync(pdfPath); } catch {} }
 
@@ -128,12 +110,10 @@ export class ContractsController {
 
     if (!buffer) throw new BadRequestException('No PDF file uploaded');
 
-    // Upload to Coolify MinIO (S3-compatible)
     const publicUrl = await this.storageService.uploadPdf(id, buffer);
     const apiUrl = `/api/contracts/${id}/pdf`;
     await this.contractsService.updatePdfUrl(id, apiUrl);
 
-    console.log(`PDF for ${id} uploaded to MinIO: ${publicUrl}`);
     return { success: true, message: 'PDF uploaded to MinIO storage', url: apiUrl };
   }
 
@@ -143,45 +123,33 @@ export class ContractsController {
     @Param('id') id: string,
     @Body() body: { chunkIndex: number; totalChunks: number; data: string }
   ) {
-    const { chunkIndex, totalChunks, data } = body;
-    if (chunkIndex === undefined || !totalChunks || !data) {
+    const { chunkIndex, data } = body;
+    if (chunkIndex === undefined || !data) {
       throw new BadRequestException('Invalid chunk payload');
     }
 
-    let session = activeChunkUploads.get(id);
-    if (!session || session.totalChunks !== totalChunks) {
-      session = { totalChunks, chunks: new Map(), updatedAt: Date.now() };
-      activeChunkUploads.set(id, session);
-    }
-
     const chunkBuffer = Buffer.from(data, 'base64');
-    session.chunks.set(chunkIndex, chunkBuffer);
-    session.updatedAt = Date.now();
+    await this.storageService.uploadChunkPart(id, chunkIndex, chunkBuffer);
 
-    if (session.chunks.size === totalChunks) {
-      const orderedChunks: Buffer[] = [];
-      for (let i = 0; i < totalChunks; i++) {
-        const c = session.chunks.get(i);
-        if (!c) throw new BadRequestException(`Missing chunk ${i}`);
-        orderedChunks.push(c);
-      }
-      activeChunkUploads.delete(id);
-      const fullBuffer = Buffer.concat(orderedChunks);
+    return { success: true, chunkIndex };
+  }
 
-      const publicUrl = await this.storageService.uploadPdf(id, fullBuffer);
-      const apiUrl = `/api/contracts/${id}/pdf`;
-      await this.contractsService.updatePdfUrl(id, apiUrl);
-
-      console.log(`Chunked PDF for ${id} assembled (${fullBuffer.length} bytes) and saved to MinIO`);
-      return { success: true, complete: true, message: 'PDF uploaded to MinIO storage', url: apiUrl };
+  @UseGuards(AuthGuard)
+  @Post(':id/complete-pdf-upload')
+  async completePdfUpload(
+    @Param('id') id: string,
+    @Body() body: { totalChunks: number }
+  ) {
+    const { totalChunks } = body;
+    if (!totalChunks || totalChunks <= 0) {
+      throw new BadRequestException('Invalid totalChunks');
     }
 
-    return {
-      success: true,
-      complete: false,
-      received: session.chunks.size,
-      total: totalChunks,
-    };
+    const publicUrl = await this.storageService.assembleChunks(id, totalChunks);
+    const apiUrl = `/api/contracts/${id}/pdf`;
+    await this.contractsService.updatePdfUrl(id, apiUrl);
+
+    return { success: true, complete: true, message: 'PDF assembled and uploaded to MinIO storage', url: apiUrl };
   }
 
   @Get(':id/pdf')
@@ -196,7 +164,7 @@ export class ContractsController {
       return;
     }
 
-    // 2. Fallback: PostgreSQL bytea (migration path for old data)
+    // 2. Fallback: PostgreSQL bytea
     const dbBuffer = await this.contractsService.getPdfData(id);
     if (dbBuffer && dbBuffer.length > 0) {
       this.storageService.uploadPdf(id, dbBuffer).catch(() => {});
@@ -206,7 +174,7 @@ export class ContractsController {
       return;
     }
 
-    // 3. Fallback: local filesystem (VPS/dev)
+    // 3. Fallback: local filesystem
     const filePath = path.join(process.cwd(), 'data', 'pdfs', `${id}.pdf`);
     if (fs.existsSync(filePath)) {
       res.setHeader('Content-Type', 'application/pdf');

@@ -146,7 +146,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(result.error || `Chunk ${i + 1}/${totalChunks} upload failed`);
       }
-      return { success: true };
+
+      // Complete assembly in MinIO S3
+      const completeRes = await fetch(`/api/contracts/${number}/complete-pdf-upload`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ totalChunks }),
+      });
+      const completeResult = await completeRes.json().catch(() => ({}));
+      if (!completeRes.ok) throw new Error(completeResult.error || 'Failed to assemble PDF in MinIO');
+      return completeResult;
     } else {
       const arrayBuf = await file.arrayBuffer();
       const base64Data = arrayBufferToBase64(arrayBuf);
