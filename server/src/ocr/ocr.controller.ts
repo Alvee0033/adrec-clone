@@ -19,15 +19,25 @@ export function extractContractFields(text: string) {
   const c = text.replace(/\s+/g, ' ').trim();
 
   // ─── SECTION SEGMENTATION ─────────────────────────────────────────────
-  const lessorStart = text.search(/(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR)/i);
-  const tenantStart = text.search(/(?:SECOND\s*PARTY|TENANT\s*DETAILS|2\.\s*TENANT)/i);
-  const propStart   = text.search(/PROPERTY\s*DETAILS/i);
-  const unitsStart  = text.search(/UNITS?\s*DETAILS/i);
+  const sectionDefs = [
+    { name: 'lessor', pos: text.search(/(?:FIRST\s*PARTY|LESSOR\s*DETAILS|1\.\s*LESSOR)/i) },
+    { name: 'tenant', pos: text.search(/(?:SECOND\s*PARTY|TENANT\s*DETAILS|2\.\s*TENANT)/i) },
+    { name: 'prop',   pos: text.search(/(?:PROPERTY\s*DETAILS|3\.\s*PROPERTY)/i) },
+    { name: 'units',  pos: text.search(/(?:UNITS?\s*DETAILS|4\.\s*UNIT)/i) },
+  ].filter(s => s.pos !== -1).sort((a, b) => a.pos - b.pos);
 
-  const lessorSection   = lessorStart !== -1 ? text.substring(lessorStart,  tenantStart > lessorStart ? tenantStart : lessorStart + 2500) : c;
-  const tenantSection   = tenantStart !== -1 ? text.substring(tenantStart,  propStart   > tenantStart ? propStart   : tenantStart + 2500) : c;
-  const propertySection = propStart   !== -1 ? text.substring(propStart,    unitsStart  > propStart   ? unitsStart  : propStart   + 1500) : c;
-  const unitsSection    = unitsStart  !== -1 ? text.substring(unitsStart,   unitsStart + 2000) : c;
+  function getSectionText(name: string): string {
+    const idx = sectionDefs.findIndex(s => s.name === name);
+    if (idx === -1) return c;
+    const start = sectionDefs[idx].pos;
+    const end = (idx + 1 < sectionDefs.length) ? sectionDefs[idx + 1].pos : start + 3000;
+    return text.substring(start, end);
+  }
+
+  const lessorSection   = getSectionText('lessor');
+  const tenantSection   = getSectionText('tenant');
+  const propertySection = getSectionText('prop');
+  const unitsSection    = getSectionText('units');
 
   const lc = lessorSection  .replace(/\s+/g, ' ').trim();
   const tc = tenantSection  .replace(/\s+/g, ' ').trim();
@@ -99,7 +109,7 @@ export function extractContractFields(text: string) {
 
   // Company: LLC/PJSC/WLL/EST/GROUP suffix or labeled "Company Name"
   const corpPat   = /((?:\b[A-Z0-9&'.]+\b\s*){1,10}\b(?:LLC|L\.L\.C|PJSC|WLL|FZE|FZC|FZ-LLC|ESTABLISHMENT|EST|CORP|LTD|LIMITED|INC|GROUP)(?:\s*-\s*[A-Z0-9\s]+)?)/i;
-  const compLabelM = lc.match(/Company\s*Name\s*[:\.]?\s*-?\s*([A-Z0-9\s.&'()\/\-]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*\.1|$)/i);
+  const compLabelM = lc.match(/(?:Company\s*Name|Lessor\s*Company)\s*[:\.]?\s*-?\s*([A-Z0-9\s.&'()\/\-]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*\.1|$)/i);
   const adjLicComp = lc.match(/(?:CN|IN)-\d+\s+([A-Z][A-Z\s.&'-]{4,80}(?:LLC|PJSC|WLL|EST|GROUP|LTD))/i);
   const corpM      = lc.match(corpPat);
 
@@ -119,13 +129,35 @@ export function extractContractFields(text: string) {
   fields.lessorCompany = compName;
 
   // Lessor name — after "Contact Person" or "Full Name" in lessor section
+  function isGoodLessorName(n: string): boolean {
+    if (!n || n.length < 4 || !n.includes(' ')) return false;
+    const lower = n.toLowerCase();
+    const bad = ['first party', 'second party', 'lessor details', 'tenant details', 'property details', 'company name', 'license no', 'contact person', 'full name', 'abu dhabi', 'united arab'];
+    return !bad.some(b => lower.includes(b));
+  }
+
   const cpM    = lc.match(/Contact\s*Person\s*(?:Full\s*Name\s*)?([A-Z][A-Z\s]{4,70}?)(?=\s*Full\s*Name|\s*Mobile|\s*Email|\s*\*|$)/i);
   const fnLesM = lc.match(/Full\s*Name\s+([A-Z][A-Z\s]{4,60}?)(?=\s*Mobile|\s*Email|\s*\*|$)/i);
-  const capsM  = lc.match(/\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\b/);
 
-  let lName = (cpM?.[1] || fnLesM?.[1] || capsM?.[1] || '').trim();
-  lName = lName.replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s-]*/i, '').trim();
-  lName = lName.replace(/\s+(?:Full\s*Name|Mobile|Email|SECOND|TENANT).*$/i, '').trim();
+  let lName = '';
+  if (cpM?.[1]) {
+    const cand = cpM[1].replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s-]*/i, '').replace(/\s+(?:Full\s*Name|Mobile|Email|SECOND|TENANT).*$/i, '').trim();
+    if (isGoodLessorName(cand)) lName = cand;
+  }
+  if (!lName && fnLesM?.[1]) {
+    const cand = fnLesM[1].replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s-]*/i, '').replace(/\s+(?:Full\s*Name|Mobile|Email|SECOND|TENANT).*$/i, '').trim();
+    if (isGoodLessorName(cand)) lName = cand;
+  }
+  if (!lName) {
+    const allLessorCaps = [...lc.matchAll(/\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\b/g)];
+    for (const m of allLessorCaps) {
+      const cand = m[1].trim();
+      if (isGoodLessorName(cand) && cand !== compName && !compName.includes(cand)) {
+        lName = cand;
+        break;
+      }
+    }
+  }
   fields.lessorName = lName;
 
   const lMobM   = lc.match(/\b(971\d{8,9})\b/);
@@ -265,7 +297,8 @@ export function extractContractFields(text: string) {
   const unitUsageM = uc.match(/Unit\s*Usage\s*[:\.]?\s*(RESIDENTIAL|COMMERCIAL|INDUSTRIAL|OFFICE)/i);
   fields.unitUsage = unitUsageM?.[1]?.toUpperCase() || 'RESIDENTIAL';
 
-  const roomsM = uc.match(/No\.?\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)/i) || (unitsStart !== -1 ? null : c.match(/\bNo\.\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)\b/i));
+  const hasUnits = sectionDefs.some(s => s.name === 'units');
+  const roomsM = uc.match(/No\.?\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)/i) || (hasUnits ? null : c.match(/\bNo\.\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)\b/i));
   fields.rooms = roomsM ? parseInt(roomsM[1], 10) : null;
 
   // Unit type: only match known keywords, not generic labels
