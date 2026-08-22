@@ -124,9 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function uploadPdfToServer(number, file) {
+  async function uploadPdfToServer(number, file, onProgress) {
     // If <= 3MB, send directly in 1 fast single request
     if (file.size <= 3 * 1024 * 1024) {
+      if (onProgress) onProgress('Uploading PDF…');
       const base64Data = await fileToBase64(file);
       const res = await fetch(`/api/contracts/${number}/upload-pdf`, {
         method: 'POST',
@@ -141,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // For larger files (>3MB), upload 3MB chunks in parallel
     const CHUNK_SIZE = 3 * 1024 * 1024;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    let completedChunks = 0;
 
     const uploadChunk = async (i) => {
       const start = i * CHUNK_SIZE;
@@ -159,13 +161,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(result.error || `Chunk ${i + 1}/${totalChunks} upload failed`);
+      completedChunks++;
+      if (onProgress) onProgress(`Uploading PDF (${completedChunks}/${totalChunks})…`);
       return result;
     };
 
-    // Parallel upload of all chunks
+    if (onProgress) onProgress(`Uploading PDF (0/${totalChunks})…`);
     await Promise.all(Array.from({ length: totalChunks }, (_, i) => uploadChunk(i)));
 
-    // Final fast assembly in MinIO S3
+    if (onProgress) onProgress('Finalizing storage…');
     const completeRes = await fetch(`/api/contracts/${number}/complete-pdf-upload`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -796,7 +800,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (pendingPdfFile) {
         try {
-          await uploadPdfToServer(number, pendingPdfFile);
+          await uploadPdfToServer(number, pendingPdfFile, (msg) => {
+            if (saveBtn) saveBtn.textContent = msg;
+          });
           clearPendingPdf();
         } catch (uploadErr) {
           console.error(uploadErr);
