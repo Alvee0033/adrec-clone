@@ -111,17 +111,54 @@ document.addEventListener('DOMContentLoaded', () => {
     setPdfDownloadVisible(true);
   }
 
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    const chunkSize = 0x8000;
+    for (let i = 0; i < len; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
   async function uploadPdfToServer(number, file) {
-    const formData = new FormData();
-    formData.append('pdf', file);
-    const res = await fetch(`/api/contracts/${number}/upload-pdf`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: formData,
-    });
-    const result = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(result.error || 'PDF upload failed');
-    return result;
+    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunk
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+    if (totalChunks > 1) {
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const slice = file.slice(start, end);
+        const arrayBuf = await slice.arrayBuffer();
+        const base64Data = arrayBufferToBase64(arrayBuf);
+
+        const res = await fetch(`/api/contracts/${number}/upload-pdf-chunk`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            chunkIndex: i,
+            totalChunks,
+            data: base64Data,
+          }),
+        });
+        const result = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(result.error || `Chunk ${i + 1}/${totalChunks} upload failed`);
+      }
+      return { success: true };
+    } else {
+      const arrayBuf = await file.arrayBuffer();
+      const base64Data = arrayBufferToBase64(arrayBuf);
+      const res = await fetch(`/api/contracts/${number}/upload-pdf`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ data: base64Data }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error || 'PDF upload failed');
+      return result;
+    }
   }
 
   const handleLogout = async () => {
