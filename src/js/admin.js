@@ -164,25 +164,64 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable(filtered);
   });
 
+  async function extractTextFromPdf(file) {
+    if (typeof window.pdfjsLib === 'undefined') return null;
+    try {
+      if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      return fullText;
+    } catch (err) {
+      console.warn('Client PDF text extraction error:', err);
+      return null;
+    }
+  }
+
   async function handleOcrUpload(file, labelElement) {
-    const formData = new FormData();
-    formData.append('pdf', file);
     const originalHtml = labelElement.innerHTML;
     labelElement.classList.add('is-busy');
     labelElement.innerHTML = `<span class="ocr-spinner"></span><span>Reading PDF…</span>`;
 
     try {
-      const res = await fetch('/api/ocr-pdf', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: formData,
-      });
-      const result = await res.json();
+      let result;
+      // 1. Try ultra-fast client-side text extraction first
+      const clientText = await extractTextFromPdf(file);
+      if (clientText && clientText.trim().length > 30) {
+        const res = await fetch('/api/ocr-pdf', {
+          method: 'POST',
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: clientText }),
+        });
+        result = await res.json();
+      } else {
+        // 2. Fallback to multipart file upload
+        const formData = new FormData();
+        formData.append('pdf', file);
+        const res = await fetch('/api/ocr-pdf', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: formData,
+        });
+        result = await res.json();
+      }
+
       labelElement.innerHTML = originalHtml;
       labelElement.classList.remove('is-busy');
 
-      if (!res.ok || !result.success) {
-        alert(`OCR Parsing Failed: ${result.error || 'Server error'}`);
+      if (!result || !result.success) {
+        alert(`OCR Parsing Failed: ${result?.error || 'Could not parse document'}`);
         return;
       }
 

@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, UseGuards, UseInterceptors, UploadedFile, Body, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../auth/auth.guard';
 import * as _pdfParse from 'pdf-parse-fork';
@@ -114,8 +114,8 @@ export function extractContractFields(text: string) {
     .replace(/^(?:CN|IN|TL|BL|LIC)-?\d{5,10}\s+/i, '')
     .replace(/\s+(?:Contact\s*Person|Full\s*Name|Mobile\s*No|Email|License\s*No).*$/i, '')
     .replace(/^[^A-Za-z0-9]+/, '').replace(/\s+/g, ' ').replace(/\.$/, '').trim();
-  // Strip any leading license number (e.g. "CN-1048007 ") from company name
-  compName = compName.replace(/^(?:CN|IN|TL|BL|LIC)-?\d{3,10}\s+/i, '').trim();
+  // Strip any leading license number or punctuation (e.g. "- INTERNATIONAL...") from company name
+  compName = compName.replace(/^(?:CN|IN|TL|BL|LIC)-?\d{3,10}\s+/i, '').replace(/^[-–—\s:]+/, '').trim();
   fields.lessorCompany = compName;
 
   // Lessor name — after "Contact Person" or "Full Name" in lessor section
@@ -124,7 +124,7 @@ export function extractContractFields(text: string) {
   const capsM  = lc.match(/\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\b/);
 
   let lName = (cpM?.[1] || fnLesM?.[1] || capsM?.[1] || '').trim();
-  lName = lName.replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s]*/i, '').trim();
+  lName = lName.replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s-]*/i, '').trim();
   lName = lName.replace(/\s+(?:Full\s*Name|Mobile|Email|SECOND|TENANT).*$/i, '').trim();
   fields.lessorName = lName;
 
@@ -132,7 +132,7 @@ export function extractContractFields(text: string) {
   fields.lessorMobile = lMobM?.[1] || '';
 
   const lEmailM = lc.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/);
-  fields.lessorEmail = lEmailM?.[1] || '';
+  fields.lessorEmail = lEmailM ? lEmailM[1].replace(/^(?:Email|Mail)[:\s]*/i, '').trim() : '';
 
   // ─── TENANT (SECOND PARTY) ─────────────────────────────────────────────
   const eidM = tc.match(/\b(784\d{12})\b/) || c.match(/\b(784\d{12})\b/);
@@ -166,26 +166,69 @@ export function extractContractFields(text: string) {
 
   // Tenant email — email NOT already assigned as lessor email
   const allEmails = [...(c.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [])];
-  fields.tenantEmail = allEmails.find(e => e !== fields.lessorEmail) || allEmails[1] || allEmails[0] || '';
+  const tEmailRaw = allEmails.find(e => e !== fields.lessorEmail) || allEmails[1] || allEmails[0] || '';
+  fields.tenantEmail = tEmailRaw ? tEmailRaw.replace(/^(?:Email|Mail)[:\s]*/i, '').trim() : '';
 
-  // Tenant name — multi-strategy
-  // Strategy 1: English name after EmiratesID (skip any Arabic)
-  const afterEidM  = tc.match(/784\d{12}[\s\S]{0,80}?([A-Z][a-z]+(?:\s+[A-Za-z]+){1,4})/);
-  // Strategy 2: English name after nationality keyword
-  const afterNatM  = tc.match(new RegExp(`(?:${nationalities.join('|')})\\s+([A-Z][a-z]+(?:\\s+[A-Za-z]+){1,4})`, 'i'));
-  // Strategy 3: "Full Name" label in tenant section (skip any Arabic block)
-  const fnTenantM  = tc.match(/Full\s*Name\s+(?:[\u0600-\u06FF\s]+)?([A-Z][a-z]+(?:\s+[A-Za-z]+){1,4})/i);
-  // Strategy 4: last proper mixed-case name in tenant section
-  const allNamesInTc = [...tc.matchAll(/\b([A-Z][a-z]{2,}(?:\s+[A-Za-z]{2,}){1,4})\b/g)];
-  const lastTcName = allNamesInTc.length ? allNamesInTc[allNamesInTc.length - 1][1] : '';
+  // Tenant name — universal multi-strategy (works for ALL CAPS, Title Case, and Mixed Case)
+  const cleanTc = tc.replace(/[\u0600-\u06FF]+/g, ' ');
 
-  let tName = (afterEidM?.[1] || afterNatM?.[1] || fnTenantM?.[1] || lastTcName || '').trim();
-  tName = tName.replace(/^(?:Full\s*Name|Nationality|Email|Mobile|EmiratesID)[:\s]*/i, '').trim();
-  // Strip leading nationality word if afterEidM swallowed it
-  const natStripRx = new RegExp(`^(?:${nationalities.join('|')})\\s+`, 'i');
-  tName = tName.replace(natStripRx, '').trim();
-  if (!tName.includes(' ') || tName.length < 5) tName = '';
-  fields.tenantName = tName;
+  function cleanTName(raw: string): string {
+    let n = raw.replace(/^(?:Full\s*Name|Tenant\s*Name|Name|Contact\s*Person|Company\s*Name|Nationality|Emirates(?:\s*ID)?|Mobile|Email)[:\s-]*/gi, '');
+    n = n.replace(/\s+(?:Full\s*Name|Tenant\s*Name|Mobile|Email|Nationality|Emirates(?:\s*ID)?|Phone|Tel|SECOND|FIRST|PROPERTY).*$/gi, '');
+    for (const nat of nationalities) {
+      const r = new RegExp(`^${nat}[:\\s-]*`, 'gi');
+      n = n.replace(r, '');
+    }
+    return n.replace(/\s+/g, ' ').trim();
+  }
+
+  function isGoodTName(n: string): boolean {
+    if (!n || n.length < 4 || !n.includes(' ')) return false;
+    const lower = n.toLowerCase();
+    const badWords = ['second party', 'first party', 'property details', 'unit details', 'rental registry', 'issue date', 'start date', 'end date', 'annual rent', 'commercial', 'residential', 'abu dhabi', 'united arab', 'emirates id', 'full name', 'contact person', 'rental'];
+    return !badWords.some(b => lower.includes(b));
+  }
+
+  // Strategy 1: Explicit Label "Full Name" or "Tenant Name"
+  const fnMatch = cleanTc.match(/(?:Full\s*Name|Tenant\s*Name|Name\s*of\s*Tenant)\s*[:\.]?\s*([A-Za-z\s.'-]{4,60}?)(?=\s*(?:Mobile|Email|Nationality|Emirates|Phone|Tel|SECOND|FIRST|PROPERTY|3\.|2\.|\*|$))/i);
+  let extractedTName = '';
+  if (fnMatch) {
+    const cand = cleanTName(fnMatch[1]);
+    if (isGoodTName(cand)) extractedTName = cand;
+  }
+
+  // Strategy 2: After Nationality
+  if (!extractedTName) {
+    const afterNatRx = new RegExp(`(?:\\b${nationalities.join('\\b|\\b')}\\b)\\s+([A-Za-z\\s.'-]{4,60}?)(?=\\s*(?:971\\d|\\+971|Mobile|Email|Phone|Emirates|\\*|$))`, 'i');
+    const afterNat = cleanTc.match(afterNatRx);
+    if (afterNat) {
+      const cand = cleanTName(afterNat[1]);
+      if (isGoodTName(cand)) extractedTName = cand;
+    }
+  }
+
+  // Strategy 3: After Emirates ID
+  if (!extractedTName) {
+    const afterEid = cleanTc.match(/784\d{12}[\s\S]{0,100}?([A-Z][A-Za-z\s.'-]{3,60}?)(?=\s*(?:971\d|\+971|Mobile|Email|Phone|Emirates|\*|$))/i);
+    if (afterEid) {
+      const cand = cleanTName(afterEid[1]);
+      if (isGoodTName(cand)) extractedTName = cand;
+    }
+  }
+
+  // Strategy 4: Candidate capitalization sequences
+  if (!extractedTName) {
+    const candidateNames = [...cleanTc.matchAll(/\b([A-Z][A-Za-z]{1,20}(?:\s+[A-Z][A-Za-z]{1,20}){1,5})\b/g)];
+    for (const m of candidateNames) {
+      const cand = cleanTName(m[1]);
+      if (isGoodTName(cand)) {
+        extractedTName = cand;
+        break;
+      }
+    }
+  }
+
+  fields.tenantName = extractedTName;
 
   // ─── PROPERTY DETAILS ──────────────────────────────────────────────────
   const muniM = pc.match(/Municipality\s*[:\.]?\s*([A-Za-z\s]+?)(?=\s*Zone|\s*Sector|\s*Plot|\s*Road|$)/i);
@@ -249,9 +292,18 @@ export class OcrController {
   @UseGuards(AuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('pdf'))
-  async ocrPdf(@UploadedFile() file: Express.Multer.File) {
+  async ocrPdf(
+    @UploadedFile() file?: Express.Multer.File,
+    @Body() body?: { text?: string }
+  ) {
+    // 1. Direct text from client-side extractor
+    if (body?.text && body.text.trim().length > 0) {
+      const fields = extractContractFields(body.text);
+      return { success: true, fields };
+    }
+
     if (!file?.buffer) {
-      throw new BadRequestException('No PDF file uploaded');
+      throw new BadRequestException('No PDF file or text provided');
     }
 
     const dataBuffer = file.buffer;
