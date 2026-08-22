@@ -125,10 +125,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function uploadPdfToServer(number, file) {
-    const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5MB chunks
+    // If <= 3MB, send directly in 1 fast single request
+    if (file.size <= 3 * 1024 * 1024) {
+      const base64Data = await fileToBase64(file);
+      const res = await fetch(`/api/contracts/${number}/upload-pdf`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ data: base64Data }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error || 'PDF upload failed');
+      return result;
+    }
+
+    // For larger files (>3MB), upload 3MB chunks in parallel
+    const CHUNK_SIZE = 3 * 1024 * 1024;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
-    for (let i = 0; i < totalChunks; i++) {
+    const uploadChunk = async (i) => {
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, file.size);
       const slice = file.slice(start, end);
@@ -145,9 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(result.error || `Chunk ${i + 1}/${totalChunks} upload failed`);
-    }
+      return result;
+    };
 
-    // Complete assembly in MinIO S3
+    // Parallel upload of all chunks
+    await Promise.all(Array.from({ length: totalChunks }, (_, i) => uploadChunk(i)));
+
+    // Final fast assembly in MinIO S3
     const completeRes = await fetch(`/api/contracts/${number}/complete-pdf-upload`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),

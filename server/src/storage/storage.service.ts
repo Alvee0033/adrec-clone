@@ -54,8 +54,7 @@ export class StorageService {
   }
 
   async assembleChunks(contractId: string, totalChunks: number): Promise<string> {
-    const parts: Buffer[] = [];
-    for (let i = 0; i < totalChunks; i++) {
+    const fetchPart = async (i: number): Promise<Buffer> => {
       const key = `contracts/chunks/${contractId}.part_${i}`;
       const command = new GetObjectCommand({
         Bucket: this.bucket,
@@ -67,8 +66,12 @@ export class StorageService {
       for await (const chunk of stream) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
       }
-      parts.push(Buffer.concat(chunks));
-    }
+      return Buffer.concat(chunks);
+    };
+
+    const parts = await Promise.all(
+      Array.from({ length: totalChunks }, (_, i) => fetchPart(i))
+    );
 
     const fullBuffer = Buffer.concat(parts);
     const finalUrl = await this.uploadPdf(contractId, fullBuffer);
