@@ -80,13 +80,10 @@ export class ContractsController {
   @Delete(':id')
   async deleteContract(@Param('id') id: string) {
     try {
+      // Try to clean up local file if it exists (VPS/local only)
       const pdfPath = path.join(process.cwd(), 'data', 'pdfs', `${id}.pdf`);
       if (fs.existsSync(pdfPath)) {
-        try {
-          fs.unlinkSync(pdfPath);
-        } catch (fileErr) {
-          console.error(`Failed to delete PDF file for contract ${id}:`, fileErr);
-        }
+        try { fs.unlinkSync(pdfPath); } catch {}
       }
       const deleted = await this.contractsService.delete(id);
       if (!deleted) throw new NotFoundException('Contract not found');
@@ -104,13 +101,8 @@ export class ContractsController {
     if (!file?.buffer) {
       throw new BadRequestException('No PDF file uploaded');
     }
-    const dataDir = path.join(process.cwd(), 'data', 'pdfs');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    const dest = path.join(dataDir, `${id}.pdf`);
-    fs.writeFileSync(dest, file.buffer);
-    
+    // Store PDF binary in PostgreSQL — filesystem is read-only on Vercel serverless
+    await this.contractsService.savePdfData(id, file.buffer);
     const url = `/api/contracts/${id}/pdf`;
     await this.contractsService.updatePdfUrl(id, url);
     return { success: true, message: 'PDF uploaded successfully', url };
@@ -118,29 +110,38 @@ export class ContractsController {
 
   @Get(':id/pdf')
   async getPdf(@Param('id') id: string, @Res() res: Response) {
+    // 1. Try DB (works on Vercel serverless — filesystem is ephemeral/read-only)
+    const pdfBuffer = await this.contractsService.getPdfData(id);
+    if (pdfBuffer && pdfBuffer.length > 0) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+      res.send(pdfBuffer);
+      return;
+    }
+
+    // 2. Fallback: local filesystem (VPS / local dev)
     const filePath = path.join(process.cwd(), 'data', 'pdfs', `${id}.pdf`);
     const fallbackDistPath = path.join(process.cwd(), '..', 'dist', 'assets', 'templates', 'blank_template.pdf');
     const fallbackPubPath = path.join(process.cwd(), '..', 'public', 'assets', 'templates', 'blank_template.pdf');
-    
-    let target = null;
-    if (fs.existsSync(filePath)) {
-      target = filePath;
-    } else if (fs.existsSync(fallbackDistPath)) {
-      target = fallbackDistPath;
-    } else if (fs.existsSync(fallbackPubPath)) {
-      target = fallbackPubPath;
+
+    let target: string | null = null;
+    if (fs.existsSync(filePath)) target = filePath;
+    else if (fs.existsSync(fallbackDistPath)) target = fallbackDistPath;
+    else if (fs.existsSync(fallbackPubPath)) target = fallbackPubPath;
+
+    if (target) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+      res.sendFile(target);
+      return;
     }
 
-    if (!target) {
-      const contract = await this.contractsService.findOne(id);
-      if (contract?.pdfUrl && contract.pdfUrl.startsWith('http')) {
-        return res.redirect(302, contract.pdfUrl);
-      }
-      throw new NotFoundException('Contract PDF not found');
+    // 3. Last resort: redirect to external URL if stored
+    const contract = await this.contractsService.findOne(id);
+    if (contract?.pdfUrl && contract.pdfUrl.startsWith('http')) {
+      return res.redirect(302, contract.pdfUrl);
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline');
-    res.sendFile(target);
+    throw new NotFoundException('Contract PDF not found');
   }
 }

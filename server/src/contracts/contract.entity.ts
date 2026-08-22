@@ -106,4 +106,7 @@ export class Contract {
 
   @Column({ nullable: true })
   pdfUrl: string;
+
+  @Column({ type: 'bytea', nullable: true })
+  pdfData: Buffer;
 }

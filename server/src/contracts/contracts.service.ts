@@ -122,4 +122,13 @@ export class ContractsService implements OnModuleInit {
   async updatePdfUrl(id: string, pdfUrl: string) {
     await this.contractsRepository.update(id, { pdfUrl });
   }
+
+  async savePdfData(id: string, buffer: Buffer) {
+    await this.contractsRepository.update(id, { pdfData: buffer });
+  }
+
+  async getPdfData(id: string): Promise<Buffer | null> {
+    const contract = await this.contractsRepository.findOne({ where: { id }, select: { pdfData: true } });
+    return contract?.pdfData ?? null;
+  }
 }
