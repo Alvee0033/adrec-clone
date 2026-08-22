@@ -107,11 +107,13 @@ export class ContractsService implements OnModuleInit {
       merged.autoDeleteEnabled = data.autoDeleteEnabled !== undefined ? Boolean(data.autoDeleteEnabled) : Boolean(existing.autoDeleteEnabled);
       merged.autoDeleteAt = data.autoDeleteAt !== undefined ? data.autoDeleteAt : existing.autoDeleteAt || null;
       await this.contractsRepository.save(merged);
+      // Return merged directly — no second round-trip
+      return merged as Contract;
     } else {
       const newContract = this.contractsRepository.create({ id, ...data });
-      await this.contractsRepository.save(newContract);
+      const saved = await this.contractsRepository.save(newContract) as unknown as Contract;
+      return saved;
     }
-    return (await this.findOne(id)) as Contract;
   }
 
   async delete(id: string): Promise<boolean> {
