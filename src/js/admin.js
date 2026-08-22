@@ -111,63 +111,51 @@ document.addEventListener('DOMContentLoaded', () => {
     setPdfDownloadVisible(true);
   }
 
-  function arrayBufferToBase64(buffer) {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    const chunkSize = 0x8000;
-    for (let i = 0; i < len; i += chunkSize) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
+  function fileToBase64(blobOrFile) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const resStr = String(reader.result || '');
+        const commaIdx = resStr.indexOf(',');
+        resolve(commaIdx >= 0 ? resStr.slice(commaIdx + 1) : resStr);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(blobOrFile);
+    });
   }
 
   async function uploadPdfToServer(number, file) {
-    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunk
+    const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5MB chunks
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
-    if (totalChunks > 1) {
-      for (let i = 0; i < totalChunks; i++) {
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const slice = file.slice(start, end);
-        const arrayBuf = await slice.arrayBuffer();
-        const base64Data = arrayBufferToBase64(arrayBuf);
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const slice = file.slice(start, end);
+      const base64Data = await fileToBase64(slice);
 
-        const res = await fetch(`/api/contracts/${number}/upload-pdf-chunk`, {
-          method: 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            chunkIndex: i,
-            totalChunks,
-            data: base64Data,
-          }),
-        });
-        const result = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(result.error || `Chunk ${i + 1}/${totalChunks} upload failed`);
-      }
-
-      // Complete assembly in MinIO S3
-      const completeRes = await fetch(`/api/contracts/${number}/complete-pdf-upload`, {
+      const res = await fetch(`/api/contracts/${number}/upload-pdf-chunk`, {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ totalChunks }),
-      });
-      const completeResult = await completeRes.json().catch(() => ({}));
-      if (!completeRes.ok) throw new Error(completeResult.error || 'Failed to assemble PDF in MinIO');
-      return completeResult;
-    } else {
-      const arrayBuf = await file.arrayBuffer();
-      const base64Data = arrayBufferToBase64(arrayBuf);
-      const res = await fetch(`/api/contracts/${number}/upload-pdf`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ data: base64Data }),
+        body: JSON.stringify({
+          chunkIndex: i,
+          totalChunks,
+          data: base64Data,
+        }),
       });
       const result = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(result.error || 'PDF upload failed');
-      return result;
+      if (!res.ok) throw new Error(result.error || `Chunk ${i + 1}/${totalChunks} upload failed`);
     }
+
+    // Complete assembly in MinIO S3
+    const completeRes = await fetch(`/api/contracts/${number}/complete-pdf-upload`, {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ totalChunks }),
+    });
+    const completeResult = await completeRes.json().catch(() => ({}));
+    if (!completeRes.ok) throw new Error(completeResult.error || 'Failed to assemble PDF in MinIO');
+    return completeResult;
   }
 
   const handleLogout = async () => {
