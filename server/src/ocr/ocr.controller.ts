@@ -14,7 +14,108 @@ import * as child_process from 'child_process';
 import * as Tesseract from 'tesseract.js';
 import * as crypto from 'crypto';
 
-export function extractContractFields(text: string) {
+// ─────────────────────────────────────────────────────────────────────────────
+// PRE-NORMALIZATION: Fix concatenated label+value text from pdf.js and OCR
+// ─────────────────────────────────────────────────────────────────────────────
+function preNormalize(raw: string): string {
+  let t = raw;
+
+  // Protect email addresses from being split (temporarily replace @ with placeholder)
+  const emails: string[] = [];
+  t = t.replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g, m => {
+    emails.push(m);
+    return `__EMAIL_${emails.length - 1}__`;
+  });
+
+  // Insert space between a LOWERCASE letter followed by a digit (at least 4 digits)
+  // This catches "Date2025" but NOT "ME99", "C173", "UNT308006"
+  t = t.replace(/([a-z])(\d{4,})/g, '$1 $2');
+  // Insert space between a digit and an UPPERCASE letter when preceded by 3+ digits
+  // This catches "58000Contract" but NOT "UNT308006F" (short digit runs)
+  t = t.replace(/(\d{3,})([A-Z][a-z])/g, '$1 $2');
+
+  // Fix known concatenated label patterns where colon/dot is missing on the SAME line
+  // "Contract No.202401457543" → "Contract No. 202401457543"
+  t = t.replace(/(No\.)[ \t]*(\d{6,})/gi, '$1 $2');
+
+  // Normalize fragmented Emirates ID on horizontal line (784 1998 8649 9468 → 784199886499468)
+  t = t.replace(/\b(784)[ \t]+(\d{4})[ \t]+(\d{4})[ \t]+(\d{4})\b/g, '$1$2$3$4');
+  // Also handle 3-digit groups: 784 199 886 499 468
+  t = t.replace(/\b(784)[ \t]*(\d{2,4})[ \t]+(\d{2,4})[ \t]+(\d{2,4})[ \t]*(\d{0,4})\b/g, (_, a, b, c, d, e) => {
+    const joined = a + b + c + d + e;
+    return /^784\d{12}$/.test(joined) ? joined : _;
+  });
+
+  // Normalize fragmented phone numbers (971 58 897 3810 → 971588973810)
+  t = t.replace(/\b(971)[ \t]+(\d{1,3})[ \t]+(\d{3,4})[ \t]+(\d{3,4})\b/g, '$1$2$3$4');
+
+  // Fix OCR letter/digit confusion in numeric-heavy fields (only horizontal spaces)
+  // In the context of Emirates ID: O→0, l→1, I→1, S→5
+  t = t.replace(/\b(784[O0lI1-9 \t]{12,18})\b/g, m =>
+    m.replace(/O/g, '0').replace(/l/g, '1').replace(/I(?=\d)/g, '1').replace(/[ \t]/g, '')
+  );
+
+  // Restore emails
+  t = t.replace(/__EMAIL_(\d+)__/g, (_, i) => emails[parseInt(i, 10)]);
+
+  return t;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATE NORMALIZATION HELPER
+// Normalizes YYYY-MM-DD, YYYY/MM/DD, DD/MM/YYYY, DD-MM-YYYY to YYYY-MM-DD
+// ─────────────────────────────────────────────────────────────────────────────
+function normalizeDateStr(rawDate: string): string {
+  if (!rawDate) return '';
+  const cleaned = rawDate.replace(/\s+/g, '').replace(/[\.\/]/g, '-');
+  // YYYY-MM-DD
+  const ymd = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (ymd) {
+    const y = ymd[1];
+    const m = ymd[2].padStart(2, '0');
+    const d = ymd[3].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  // DD-MM-YYYY
+  const dmy = cleaned.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (dmy) {
+    const d = dmy[1].padStart(2, '0');
+    const m = dmy[2].padStart(2, '0');
+    const y = dmy[3];
+    return `${y}-${m}-${d}`;
+  }
+  return rawDate.trim();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MULTI-LINE LABEL→VALUE SCANNER
+// Handles the vertical grid layout where labels and values are on separate lines
+// ─────────────────────────────────────────────────────────────────────────────
+function multiLineScan(sectionText: string, labelPattern: RegExp): string {
+  const lines = sectionText.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+  for (let i = 0; i < lines.length; i++) {
+    if (labelPattern.test(lines[i])) {
+      // Check if this line contains the value after label
+      const afterLabel = lines[i].replace(labelPattern, '').trim();
+      if (afterLabel.length > 1 && !/^\s*[-_~.:]+\s*$/.test(afterLabel)) {
+        return afterLabel;
+      }
+      // Value is on the next non-empty line
+      for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+        const next = lines[j].trim();
+        if (next.length > 0 && !/^\s*[-_~.]+\s*$/.test(next)) {
+          // Skip lines that are themselves labels
+          if (/^(?:Email|Mobile\s*No|License\s*No|Emirates\s*ID|Full\s*Name|Nationality|Company\s*Name|Contact\s*Person|Property\s*Details|Units?\s*Details)\b/i.test(next)) continue;
+          return next;
+        }
+      }
+    }
+  }
+  return '';
+}
+
+export function extractContractFields(rawText: string) {
+  const text = preNormalize(rawText);
   const fields: any = {};
   const c = text.replace(/\s+/g, ' ').trim();
 
@@ -28,9 +129,9 @@ export function extractContractFields(text: string) {
 
   function getSectionText(name: string): string {
     const idx = sectionDefs.findIndex(s => s.name === name);
-    if (idx === -1) return c;
+    if (idx === -1) return text;
     const start = sectionDefs[idx].pos;
-    const end = (idx + 1 < sectionDefs.length) ? sectionDefs[idx + 1].pos : start + 3000;
+    const end = (idx + 1 < sectionDefs.length) ? sectionDefs[idx + 1].pos : start + 3500;
     return text.substring(start, end);
   }
 
@@ -45,30 +146,38 @@ export function extractContractFields(text: string) {
   const uc = unitsSection   .replace(/\s+/g, ' ').trim();
 
   // ─── CONTRACT DETAILS ──────────────────────────────────────────────────
-  const numM = c.match(/(?:Contract\s*No\.?|Contract\s*Number)\s*[:\.]?\s*(\d{10,15})/i) || c.match(/\b(20\d{10})\b/);
+  const SEP = '[:\\s.\\-]*'; // flexible separator
+
+  const numM = c.match(/(?:Contract\s*No\.?)[\s:.]*(\d{10,15})/i)
+            || c.match(/(?:Contract\s*Number)[\s:.]*(\d{10,15})/i)
+            || c.match(/\b(20\d{10})\b/);
   fields.number = numM ? numM[1] : '';
 
-  const issueDateM = c.match(/Issue\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i) || c.match(/Contract\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i);
-  fields.issueDate = issueDateM ? issueDateM[1] : '';
+  const issueDateM = c.match(new RegExp(`Issue\\s*Date${SEP}(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})`, 'i'))
+                  || c.match(new RegExp(`Contract\\s*Date${SEP}(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})`, 'i'))
+                  || c.match(new RegExp(`Issue\\s*Date${SEP}(\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4})`, 'i'));
+  fields.issueDate = issueDateM ? normalizeDateStr(issueDateM[1]) : '';
 
-  const startDateM = c.match(/Start\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i);
-  fields.startDate = startDateM ? startDateM[1] : '';
+  const startDateM = c.match(new RegExp(`Start\\s*Date${SEP}(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})`, 'i'))
+                  || c.match(new RegExp(`Start\\s*Date${SEP}(\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4})`, 'i'));
+  fields.startDate = startDateM ? normalizeDateStr(startDateM[1]) : '';
 
-  const endDateM = c.match(/End\s*Date\s*[:\.]?\s*(\d{4}-\d{2}-\d{2})/i);
-  fields.endDate = endDateM ? endDateM[1] : '';
+  const endDateM = c.match(new RegExp(`End\\s*Date${SEP}(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})`, 'i'))
+                || c.match(new RegExp(`End\\s*Date${SEP}(\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4})`, 'i'));
+  fields.endDate = endDateM ? normalizeDateStr(endDateM[1]) : '';
 
-  // Positional fallback — issue, start, end appear in sequence
+  // Positional fallback for dates if labels were missed
   if (!fields.issueDate || !fields.startDate || !fields.endDate) {
     const allDates = [...new Set(c.match(/\b(\d{4}-\d{2}-\d{2})\b/g) || [])];
-    if (!fields.issueDate && allDates[0]) fields.issueDate = allDates[0];
-    if (!fields.startDate && allDates[1]) fields.startDate = allDates[1];
-    if (!fields.endDate   && allDates[2]) fields.endDate   = allDates[2];
+    if (!fields.issueDate && allDates[0]) fields.issueDate = normalizeDateStr(allDates[0]);
+    if (!fields.startDate && allDates[1]) fields.startDate = normalizeDateStr(allDates[1]);
+    if (!fields.endDate   && allDates[2]) fields.endDate   = normalizeDateStr(allDates[2]);
   }
 
-  const rentM = c.match(/Annual\s*Rent\s*[:\.]?\s*([\d,]+(?:\.\d+)?)/i);
+  const rentM = c.match(new RegExp(`Annual\\s*Rent${SEP}([\\d,]+(?:\\.\\d+)?)`, 'i'));
   fields.annualRent = rentM ? parseFloat(rentM[1].replace(/,/g, '')) : null;
 
-  const valueM = c.match(/Contract\s*Value\s*[:\.]?\s*([\d,]+(?:\.\d+)?)/i);
+  const valueM = c.match(new RegExp(`Contract\\s*Value${SEP}([\\d,]+(?:\\.\\d+)?)`, 'i'));
   fields.value = valueM ? parseFloat(valueM[1].replace(/,/g, '')) : fields.annualRent;
 
   if (!fields.annualRent) {
@@ -79,28 +188,28 @@ export function extractContractFields(text: string) {
     }
   }
 
-  const depositM = c.match(/Security\s*Deposit\s*[:\.]?\s*([\d,]+(?:\.\d+)?)/i);
+  const depositM = c.match(new RegExp(`Security\\s*Deposit${SEP}([\\d,]+(?:\\.\\d+)?)`, 'i'));
   fields.securityDeposit = depositM ? parseFloat(depositM[1].replace(/,/g, '')) : null;
 
-  const typeM = c.match(/Contract\s*Type\s*[:\.]?\s*(Residential|Commercial)/i);
+  const typeM = c.match(new RegExp(`Contract\\s*Type${SEP}(Residential|Commercial)`, 'i'));
   fields.type = typeM ? typeM[1] : 'Residential';
 
-  const termM = c.match(/Contract\s*Term\s*[:\.]?\s*([\d]+\s*\w+)/i);
+  const termM = c.match(new RegExp(`Contract\\s*Term${SEP}([\\d]+\\s*\\w+)`, 'i'));
   fields.term = termM ? termM[1].trim() : '';
 
-  const payMethodM = c.match(/Payment\s*Method\s*[:\.]?\s*([A-Za-z]+)/i);
+  const payMethodM = c.match(new RegExp(`Payment\\s*Method${SEP}([A-Za-z]+)`, 'i'));
   fields.paymentMethod = (payMethodM && !['number','of'].includes(payMethodM[1].toLowerCase())) ? payMethodM[1] : 'Cheque';
 
-  const paymentsM = c.match(/Number\s*of\s*Payments\s*[:\.]?\s*(\d+)/i);
+  const paymentsM = c.match(new RegExp(`Number\\s*of\\s*Payments${SEP}(\\d+)`, 'i'));
   fields.payments = paymentsM ? parseInt(paymentsM[1], 10) : 1;
 
-  const occupantsM = c.match(/Number\s*of\s*Occupants\s*[:\.]?\s*(\d+)/i);
+  const occupantsM = c.match(new RegExp(`Number\\s*of\\s*Occupants${SEP}(\\d+)`, 'i'));
   fields.occupants = occupantsM ? parseInt(occupantsM[1], 10) : 1;
 
-  const waterM = c.match(/Water\s*[&＆]\s*Electricity\s*Bill\s*[:\.]?\s*([A-Z]+)/i);
+  const waterM = c.match(/Water\s*[&＆]\s*Electricity\s*Bill[\s:.]*([A-Z]+)/i);
   fields.waterElectricity = (waterM && waterM[1] !== 'Pets') ? waterM[1] : 'TENANT';
 
-  const petsM = c.match(/Pets\s*Allowed\s*[:\.]?\s*(Yes|No)/i);
+  const petsM = c.match(/Pets\s*Allowed[\s:.]*(Yes|No)/i);
   fields.petsAllowed = petsM ? petsM[1] : 'No';
 
   // ─── LESSOR (FIRST PARTY) ──────────────────────────────────────────────
@@ -109,7 +218,7 @@ export function extractContractFields(text: string) {
 
   // Company: LLC/PJSC/WLL/EST/GROUP suffix or labeled "Company Name"
   const corpPat   = /((?:\b[A-Z0-9&'.]+\b\s*){1,10}\b(?:LLC|L\.L\.C|PJSC|WLL|FZE|FZC|FZ-LLC|ESTABLISHMENT|EST|CORP|LTD|LIMITED|INC|GROUP)(?:\s*-\s*[A-Z0-9\s]+)?)/i;
-  const compLabelM = lc.match(/(?:Company\s*Name|Lessor\s*Company)\s*[:\.]?\s*-?\s*([A-Z0-9\s.&'()\/\-]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*\.1|$)/i);
+  const compLabelM = lc.match(/(?:Company\s*Name|Lessor\s*Company)[\s:.\-]*([A-Z0-9\s.&'()\/\-]{3,80}?)(?=\s*Contact|\s*Full\s*Name|\s*Mobile|\s*Email|\s*License|\s*\.1|$)/i);
   const adjLicComp = lc.match(/(?:CN|IN)-\d+\s+([A-Z][A-Z\s.&'-]{4,80}(?:LLC|PJSC|WLL|EST|GROUP|LTD))/i);
   const corpM      = lc.match(corpPat);
 
@@ -118,13 +227,18 @@ export function extractContractFields(text: string) {
   else if (adjLicComp?.[1]) compName = adjLicComp[1];
   else if (corpM?.[1])      compName = corpM[1];
 
+  // Multi-line fallback for company name
+  if (!compName) {
+    const mlCompany = multiLineScan(lessorSection, /^\s*Company\s*Name\s*$/i);
+    if (mlCompany && mlCompany.length > 3) compName = mlCompany;
+  }
+
   compName = compName
     .replace(/L\s*\.\s*L\s*\.\s*C\.?/gi, 'LLC').replace(/L\s*L\s*C/gi, 'LLC')
     .replace(/^(?:Company\s*Name|Email|Mobile\s*No|License\s*No|CN-\d+|IN-\d+)[:\s-]*/i, '')
     .replace(/^(?:CN|IN|TL|BL|LIC)-?\d{5,10}\s+/i, '')
     .replace(/\s+(?:Contact\s*Person|Full\s*Name|Mobile\s*No|Email|License\s*No).*$/i, '')
     .replace(/^[^A-Za-z0-9]+/, '').replace(/\s+/g, ' ').replace(/\.$/, '').trim();
-  // Strip any leading license number or punctuation (e.g. "- INTERNATIONAL...") from company name
   compName = compName.replace(/^(?:CN|IN|TL|BL|LIC)-?\d{3,10}\s+/i, '').replace(/^[-–—\s:]+/, '').trim();
   fields.lessorCompany = compName;
 
@@ -148,6 +262,11 @@ export function extractContractFields(text: string) {
     const cand = fnLesM[1].replace(/^(?:Contact\s*Person|Full\s*Name|Company\s*Name)[:\s-]*/i, '').replace(/\s+(?:Full\s*Name|Mobile|Email|SECOND|TENANT).*$/i, '').trim();
     if (isGoodLessorName(cand)) lName = cand;
   }
+  // Multi-line fallback for lessor name
+  if (!lName) {
+    const mlLessorName = multiLineScan(lessorSection, /^\s*(?:Contact\s*Person|Full\s*Name)\s*$/i);
+    if (mlLessorName && isGoodLessorName(mlLessorName)) lName = mlLessorName;
+  }
   if (!lName) {
     const allLessorCaps = [...lc.matchAll(/\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\b/g)];
     for (const m of allLessorCaps) {
@@ -160,17 +279,35 @@ export function extractContractFields(text: string) {
   }
   fields.lessorName = lName;
 
-  const lMobM   = lc.match(/\b(971\d{8,9})\b/);
+  // Lessor mobile — regex + multi-line
+  const lMobM   = lc.match(/(?:^|\D)(971\d{8,9})(?:\D|$)/) || c.match(/(?:^|\D)(971\d{8,9})(?:\D|$)/);
   fields.lessorMobile = lMobM?.[1] || '';
+  if (!fields.lessorMobile) {
+    const mlMob = multiLineScan(lessorSection, /^\s*Mobile\s*(?:No\.?)?\s*$/i);
+    const mobMatch = mlMob.match(/(971\d{8,9})/);
+    if (mobMatch) fields.lessorMobile = mobMatch[1];
+  }
 
+  // Lessor email — regex + multi-line
   const lEmailM = lc.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/);
   fields.lessorEmail = lEmailM ? lEmailM[1].replace(/^(?:Email|Mail)[:\s]*/i, '').trim() : '';
+  if (!fields.lessorEmail) {
+    const mlEmail = multiLineScan(lessorSection, /^\s*Email\s*$/i);
+    const emailMatch = mlEmail.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/);
+    if (emailMatch) fields.lessorEmail = emailMatch[1];
+  }
 
   // ─── TENANT (SECOND PARTY) ─────────────────────────────────────────────
-  const eidM = tc.match(/\b(784\d{12})\b/) || c.match(/\b(784\d{12})\b/);
+  // Emirates ID — regex + multi-line (allow anywhere in tenant section or global)
+  const eidM = tc.match(/(?:^|\D)(784\d{12})(?:\D|$)/) || tc.match(/(784\d{12})/) || c.match(/(?:^|\D)(784\d{12})(?:\D|$)/) || c.match(/(784\d{12})/);
   fields.tenantEmiratesId = eidM?.[1] || '';
+  if (!fields.tenantEmiratesId) {
+    const mlEid = multiLineScan(tenantSection, /^\s*Emirates\s*ID\s*(?:No\.?)?\s*$/i);
+    const eidMatch = mlEid.replace(/\s/g, '').match(/(784\d{12})/);
+    if (eidMatch) fields.tenantEmiratesId = eidMatch[1];
+  }
 
-  // Nationality — comprehensive list
+  // Nationality — comprehensive list + multi-line
   const nationalities = [
     'Indian?','Pakistan(?:i)?','Bangladeshi?','Filipino?','Philippine',
     'Egyptian?','Jordanian?','Lebanese?','Syrian?','Sri\\s*Lankan?',
@@ -191,19 +328,34 @@ export function extractContractFields(text: string) {
   const natRx = new RegExp(`\\b(${nationalities.join('|')})\\b`, 'i');
   const natM  = tc.match(natRx) || c.match(natRx);
   fields.tenantNationality = natM?.[1] || '';
+  if (!fields.tenantNationality) {
+    const mlNat = multiLineScan(tenantSection, /^\s*Nationality\s*$/i);
+    const natMatch = mlNat.match(natRx);
+    if (natMatch) fields.tenantNationality = natMatch[1];
+  }
 
-  // Tenant mobile — search tenant section first, then fallback to global
-  const tcMobiles = [...(tc.match(/\b(971\d{8,9})\b/g) || [])];
-  const allMobiles = [...(c.match(/\b(971\d{8,9})\b/g) || [])];
+  // Tenant mobile — regex + multi-line
+  const tcMobiles = [...(tc.match(/\b(971\d{8,9})\b/g) || tc.match(/(971\d{8,9})/g) || [])];
+  const allMobiles = [...(c.match(/\b(971\d{8,9})\b/g) || c.match(/(971\d{8,9})/g) || [])];
   fields.tenantMobile = tcMobiles[0] || allMobiles.find(m => m !== fields.lessorMobile) || allMobiles[1] || allMobiles[0] || '';
+  if (!fields.tenantMobile) {
+    const mlTenantMob = multiLineScan(tenantSection, /^\s*Mobile\s*(?:No\.?)?\s*$/i);
+    const mobMatch = mlTenantMob.match(/(971\d{8,9})/);
+    if (mobMatch) fields.tenantMobile = mobMatch[1];
+  }
 
-  // Tenant email — search tenant section first, then fallback to global
+  // Tenant email — regex + multi-line
   const tcEmails = [...(tc.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [])];
   const allEmails = [...(c.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [])];
   const tEmailRaw = tcEmails[0] || allEmails.find(e => e.toLowerCase() !== fields.lessorEmail.toLowerCase()) || allEmails[1] || allEmails[0] || '';
   fields.tenantEmail = tEmailRaw ? tEmailRaw.replace(/^(?:Email|Mail)[:\s]*/i, '').trim() : '';
+  if (!fields.tenantEmail) {
+    const mlTenantEmail = multiLineScan(tenantSection, /^\s*Email\s*$/i);
+    const emailMatch = mlTenantEmail.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/);
+    if (emailMatch) fields.tenantEmail = emailMatch[1];
+  }
 
-  // Tenant name — universal token-based scanner + label fallback
+  // Tenant name — universal token-based scanner + multi-line + label fallback
   const forbiddenKeywords = new Set([
     'contract', 'registry', 'tenancy', 'issue', 'start', 'end', 'rent', 'value',
     'deposit', 'grace', 'period', 'term', 'payment', 'method', 'number', 'occupants', 'water',
@@ -231,10 +383,10 @@ export function extractContractFields(text: string) {
 
   const page1 = text.split(/SIGNATURE|We,\s*the\s*undersigned|APPENDIX/i)[0] || text;
   const cleanP1 = page1.replace(/https?:\/\/\S+/gi, ' ').replace(/[\u0600-\u06FF]+/g, ' ');
-  const lines = cleanP1.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+  const scanLines = cleanP1.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
   const candidates: string[] = [];
 
-  for (const line of lines) {
+  for (const line of scanLines) {
     const lClean = line.replace(/^(?:Full\s*Name|Tenant\s*Name|Name|Contact\s*Person|Company\s*Name|1\.\s*TENANT\s*DETAILS|2\.\s*TENANT\s*DETAILS|TENANT\s*DETAILS|OCCUPANTS\s*DETAILS)[:\s-]*/gi, '');
     const words = lClean.split(/[\s,\.\(\)\*\:\/\-\_~]+/).filter(Boolean);
     
@@ -243,23 +395,29 @@ export function extractContractFields(text: string) {
       if (isValidNameToken(w)) {
         currentName.push(w);
       } else {
-        if (currentName.length >= 2 && currentName.length <= 5) {
+        if (currentName.length >= 2 && currentName.length <= 6) {
           candidates.push(currentName.join(' '));
         }
         currentName = [];
       }
     }
-    if (currentName.length >= 2 && currentName.length <= 5) {
+    if (currentName.length >= 2 && currentName.length <= 6) {
       candidates.push(currentName.join(' '));
     }
   }
 
-  const allCapWordMatches = [...cleanP1.matchAll(/\b([A-Z][a-z]{2,}(?:\s+[A-Za-z]{2,}){1,4})\b/g)].map(m => m[1]);
+  const allCapWordMatches = [...cleanP1.matchAll(/\b([A-Z][a-z]{2,}(?:\s+[A-Za-z]{2,}){1,5})\b/g)].map(m => m[1]);
   for (const m of allCapWordMatches) {
     const ws = m.split(/\s+/);
     if (ws.length >= 2 && ws.every(isValidNameToken)) {
       candidates.push(m);
     }
+  }
+
+  // Multi-line fallback: look for "Full Name" label in tenant section
+  const mlTenantName = multiLineScan(tenantSection, /^\s*Full\s*Name\s*$/i);
+  if (mlTenantName && mlTenantName.length >= 4) {
+    candidates.unshift(mlTenantName); // push to front for priority
   }
 
   // Filter out lessor names and companies
@@ -274,66 +432,137 @@ export function extractContractFields(text: string) {
   // Prefer longer multi-word match that contains others
   let bestName = '';
   if (filteredCandidates.length > 0) {
-    // If there's a long name like "Pinkon Mahmud Md Riaz Mahmud", prefer it over substrings
     const longest = [...filteredCandidates].sort((a, b) => b.length - a.length)[0];
-    const first = filteredCandidates[0]; // primary tenant is always listed FIRST in ADREC contracts
+    const first = filteredCandidates[0];
     bestName = (longest.length >= first.length + 4) ? longest : first;
   }
 
   fields.tenantName = bestName;
 
   // ─── PROPERTY DETAILS ──────────────────────────────────────────────────
-  const muniM = pc.match(/Municipality\s*[:\.]?\s*([A-Za-z\s]+?)(?=\s*Zone|\s*Sector|\s*Plot|\s*Road|$)/i);
+  const muniM = pc.match(new RegExp(`Municipality${SEP}([A-Za-z\\s]+?)(?=\\s*Zone|\\s*Sector|\\s*Plot|\\s*Road|$)`, 'i'));
   fields.municipality = muniM?.[1]?.trim() || '';
+  if (!fields.municipality) {
+    const mlMuni = multiLineScan(propertySection, /^\s*Municipality\s*$/i);
+    if (mlMuni) fields.municipality = mlMuni.trim();
+  }
 
-  const zoneM = pc.match(/Zone\s*[:\.]?\s*([A-Za-z\s]+?)(?=\s*Sector|\s*Plot|\s*Road|\s*Municipality|$)/i);
+  const zoneM = pc.match(new RegExp(`Zone${SEP}([A-Za-z\\s]+?)(?=\\s*Sector|\\s*Plot|\\s*Road|\\s*Municipality|$)`, 'i'));
   fields.zone = zoneM?.[1]?.trim() || '';
+  if (!fields.zone) {
+    const mlZone = multiLineScan(propertySection, /^\s*Zone\s*$/i);
+    if (mlZone) fields.zone = mlZone.trim();
+  }
 
-  const sectorM = pc.match(/Sector\s*[:\.]?\s*([A-Z0-9]+)/i);
+  const sectorM = pc.match(new RegExp(`Sector${SEP}([A-Za-z0-9\\s\\-]+?)(?=\\s*Plot|\\s*Road|\\s*Zone|\\s*Municipality|\\s*Property|$)`, 'i'));
   fields.sector = sectorM?.[1]?.trim() || '';
+  if (!fields.sector) {
+    const mlSector = multiLineScan(propertySection, /^\s*Sector\s*$/i);
+    if (mlSector) fields.sector = mlSector.trim();
+  }
 
-  const plotM = pc.match(/Plot\s*No\.?\s*[:\.]?\s*([A-Z0-9\-]+)/i);
+  const plotM = pc.match(new RegExp(`Plot\\s*No\\.?${SEP}([A-Za-z0-9\\-]+)`, 'i'));
   fields.plot = plotM?.[1]?.trim() || '';
+  if (!fields.plot) {
+    const mlPlot = multiLineScan(propertySection, /^\s*Plot\s*(?:No\.?)?\s*$/i);
+    if (mlPlot) fields.plot = mlPlot.trim();
+  }
 
-  const plotAddrM = pc.match(/Plot\s*Address\s*[:\.]?\s*([A-Z0-9\-\/\.]+)/i);
+  const plotAddrM = pc.match(new RegExp(`Plot\\s*Address${SEP}([A-Z0-9\\-\\/\\.]+)`, 'i'));
   fields.plotAddress = plotAddrM?.[1]?.trim() || '';
 
-  const propNameM = pc.match(/Property\s*Name\s*[:\.]?\s*([A-Za-z0-9][A-Za-z0-9\s\-\.]{2,59}?)(?=\s{2,}|\s*Property\s*Type|\s*Municipality|\s*Zone|\s*Building|\s*Plot|$)/i);
-  const rawPropName = propNameM?.[1]?.trim() || '';
+  const propNameM = pc.match(new RegExp(`Property\\s*Name${SEP}([A-Za-z0-9][A-Za-z0-9\\s\\-\\.]{2,59}?)(?=\\s{2,}|\\s*Property\\s*Type|\\s*Municipality|\\s*Zone|\\s*Building|\\s*Plot|$)`, 'i'));
+  let rawPropName = propNameM?.[1]?.trim() || '';
+  if (!rawPropName) {
+    const mlPropName = multiLineScan(propertySection, /^\s*Property\s*Name\s*$/i);
+    if (mlPropName) rawPropName = mlPropName.trim();
+  }
   // Deduplicate if same value repeated (multi-column PDF artifact)
   const halfLen = Math.floor(rawPropName.length / 2);
   const propHalf = rawPropName.slice(0, halfLen).trim();
   fields.propertyName = (propHalf && rawPropName.slice(halfLen).trim().toLowerCase() === propHalf.toLowerCase())
     ? propHalf : rawPropName;
 
-  const propTypeM = c.match(/Property\s*Type\s*[:\.]?\s*([A-Z]+)/i);
+  const propTypeM = c.match(new RegExp(`Property\\s*Type${SEP}([A-Z]+)`, 'i'));
   fields.propertyType = propTypeM?.[1] || 'BUILDING';
 
   // ─── UNITS DETAILS ─────────────────────────────────────────────────────
-  const premiseM = uc.match(/(?:Premise|Property)\s*(?:No\.?|Number)?\s*[:\.]?\s*(\d{8,12})/i) || c.match(/\b(\d{10})\b/);
+  // Premise — regex + multi-line
+  const premiseM = uc.match(new RegExp(`(?:Premise|Property)\\s*(?:No\\.?|Number)?${SEP}(\\d{8,12})`, 'i')) || c.match(/\b(\d{10})\b/);
   fields.premise = premiseM?.[1] || '';
+  if (!fields.premise) {
+    const mlPremise = multiLineScan(unitsSection, /^\s*Premise\s*(?:No\.?)?\s*$/i);
+    const premMatch = mlPremise.match(/(\d{8,12})/);
+    if (premMatch) fields.premise = premMatch[1];
+  }
 
-  // Unit Usage: only from explicit label, not from generic 'c' fallback
-  const unitUsageM = uc.match(/Unit\s*Usage\s*[:\.]?\s*(RESIDENTIAL|COMMERCIAL|INDUSTRIAL|OFFICE)/i);
-  fields.unitUsage = unitUsageM?.[1]?.toUpperCase() || 'RESIDENTIAL';
+  // Unit Usage — regex + multi-line
+  const unitUsageM = uc.match(new RegExp(`Unit\\s*Usage${SEP}(RESIDENTIAL|COMMERCIAL|INDUSTRIAL|OFFICE)`, 'i'));
+  fields.unitUsage = unitUsageM?.[1]?.toUpperCase() || '';
+  if (!fields.unitUsage) {
+    const mlUsage = multiLineScan(unitsSection, /^\s*Unit\s*Usage\s*$/i);
+    const usageMatch = mlUsage.match(/(RESIDENTIAL|COMMERCIAL|INDUSTRIAL|OFFICE)/i);
+    fields.unitUsage = usageMatch?.[1]?.toUpperCase() || 'RESIDENTIAL';
+  }
 
+  // Rooms — regex + multi-line
   const hasUnits = sectionDefs.some(s => s.name === 'units');
-  const roomsM = uc.match(/No\.?\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)/i) || (hasUnits ? null : c.match(/\bNo\.\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)\b/i));
+  const roomsM = uc.match(new RegExp(`No\\.?\\s*of\\s*[Rr]ooms?${SEP}(\\d+)`, 'i')) || (hasUnits ? null : c.match(/\bNo\.\s*of\s*[Rr]ooms?\s*[:\.]?\s*(\d+)\b/i));
   fields.rooms = roomsM ? parseInt(roomsM[1], 10) : null;
+  if (fields.rooms === null) {
+    const mlRooms = multiLineScan(unitsSection, /^\s*No\.?\s*of\s*[Rr]ooms?\s*$/i);
+    const roomMatch = mlRooms.match(/(\d+)/);
+    if (roomMatch) fields.rooms = parseInt(roomMatch[1], 10);
+  }
 
-  // Unit type: only match known keywords, not generic labels
-  const unitTypeM = uc.match(/Unit\s*Type\s*[:\.]?\s*(APARTMENT|VILLA|STUDIO|OFFICE|SHOP|WAREHOUSE|FLOOR|RESIDENTIAL|COMMERCIAL)/i)
+  // Unit type — regex + multi-line
+  const unitTypeM = uc.match(new RegExp(`Unit\\s*Type${SEP}(APARTMENT|VILLA|STUDIO|OFFICE|SHOP|WAREHOUSE|FLOOR|RESIDENTIAL|COMMERCIAL)`, 'i'))
                  || c.match(/\b(APARTMENT|VILLA|STUDIO|OFFICE|SHOP|WAREHOUSE|FLOOR)\b/i);
-  fields.unitType = unitTypeM?.[1]?.toUpperCase() || 'APARTMENT';
+  fields.unitType = unitTypeM?.[1]?.toUpperCase() || '';
+  if (!fields.unitType) {
+    const mlUnitType = multiLineScan(unitsSection, /^\s*Unit\s*Type\s*$/i);
+    const typeMatch = mlUnitType.match(/(APARTMENT|VILLA|STUDIO|OFFICE|SHOP|WAREHOUSE|FLOOR)/i);
+    fields.unitType = typeMatch?.[1]?.toUpperCase() || 'APARTMENT';
+  }
 
-  // Registration: only explicit UNT-pattern or reg label, not 10-digit premise number
-  const regM = uc.match(/(?:Unit\s*)?Reg(?:istration)?\s*No\.?\s*[:\.]?\s*([A-Z]{2,}\d+)/i) || c.match(/\b(UNT\d+)\b/i);
+  // Unit Reg No — regex + multi-line
+  const regM = uc.match(/(?:Unit\s*)?Reg(?:istration)?\s*No\.?[\s:.]*([A-Z]{2,}\d+)/i) || c.match(/\b(UNT\d+)\b/i);
   fields.unitRegNo = regM?.[1]?.toUpperCase() || '';
+  if (!fields.unitRegNo) {
+    const mlReg = multiLineScan(unitsSection, /^\s*(?:Unit\s*)?Reg(?:istration)?\s*No\.?\s*$/i);
+    const regMatch = mlReg.match(/([A-Z]{2,}\d+)/i);
+    if (regMatch) fields.unitRegNo = regMatch[1].toUpperCase();
+  }
 
-  // Unit number: only match Flat/Apt + actual number, not generic "Unit" word
-  const unitNoM = uc.match(/(?:Flat|Apt\.?|Apartment)\s*No\.?\s*[:\.]?\s*([\d]+[\w\-\/]*)/i)
-               || c.match(/(?:Flat|Apt\.?)\s*No\.?\s*[:\.]?\s*([\d]+[\w\-\/]*)/i);
+  // Unit number — regex + multi-line
+  const unitNoM = uc.match(/(?:Flat|Apt\.?|Apartment)\s*No\.?[\s:.]*(\d+[\w\-\/]*)/i)
+               || c.match(/(?:Flat|Apt\.?)\s*No\.?[\s:.]*(\d+[\w\-\/]*)/i);
   fields.unitNumber = unitNoM ? `Flat No. ${unitNoM[1]}` : '';
+  if (!fields.unitNumber) {
+    const mlUnitNo = multiLineScan(unitsSection, /^\s*(?:Unit|Flat|Apt)\s*No\.?\s*$/i);
+    const noMatch = mlUnitNo.match(/(\d+[\w\-\/]*)/);
+    if (noMatch) fields.unitNumber = `Flat No. ${noMatch[1]}`;
+  }
+
+  // ─── POST-PROCESSING: Final cleanup and validation ─────────────────────
+  // Strip whitespace from numeric-only fields
+  if (fields.tenantEmiratesId) fields.tenantEmiratesId = fields.tenantEmiratesId.replace(/\s/g, '');
+  if (fields.tenantMobile)     fields.tenantMobile     = fields.tenantMobile.replace(/\s/g, '');
+  if (fields.lessorMobile)     fields.lessorMobile     = fields.lessorMobile.replace(/\s/g, '');
+  if (fields.premise)          fields.premise          = fields.premise.replace(/\s/g, '');
+
+  // Validate Emirates ID format (must be 15 digits starting with 784)
+  if (fields.tenantEmiratesId && !/^784\d{12}$/.test(fields.tenantEmiratesId)) {
+    fields.tenantEmiratesId = '';
+  }
+
+  // Validate phone format (must start with 971)
+  if (fields.tenantMobile && !/^971\d{8,9}$/.test(fields.tenantMobile)) {
+    fields.tenantMobile = '';
+  }
+  if (fields.lessorMobile && !/^971\d{8,9}$/.test(fields.lessorMobile)) {
+    fields.lessorMobile = '';
+  }
 
   return fields;
 }
@@ -373,7 +602,7 @@ export class OcrController {
 
     const onVercel = Boolean(process.env.VERCEL);
     if (!onVercel && (!fields.number || !fields.tenantName || !fields.annualRent || !fields.startDate || text.trim().length < 50)) {
-      console.log('PDF text incomplete — running high-res Tesseract OCR fallback…');
+      console.log('PDF text incomplete — running 300 DPI high-res Tesseract OCR fallback…');
       const dataDir = path.join(process.cwd(), 'data');
       if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
       const tempId = Date.now() + '_' + crypto.randomBytes(4).toString('hex');
@@ -382,7 +611,7 @@ export class OcrController {
       fs.writeFileSync(tempPdfPath, dataBuffer);
 
       try {
-        child_process.execSync(`pdftoppm -png -r 200 -f 1 -l 2 "${tempPdfPath}" "${tempImgPrefix}"`);
+        child_process.execSync(`pdftoppm -png -r 300 -f 1 -l 3 "${tempPdfPath}" "${tempImgPrefix}"`);
         const imgFiles = fs.readdirSync(dataDir).filter(f => f.startsWith(`temp_page_${tempId}`)).sort();
         let ocrText = '';
         for (const imgName of imgFiles) {
@@ -419,3 +648,4 @@ export class OcrController {
     return { success: true, fields };
   }
 }
+

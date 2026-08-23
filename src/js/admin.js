@@ -267,7 +267,40 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
+        const items = textContent.items.filter(it => it.str && it.str.trim().length > 0);
+        if (!items.length) continue;
+
+        // Position-aware text assembly: use X/Y coordinates to insert proper
+        // spaces and newlines instead of blindly joining with single space.
+        // This prevents "IssueDate2025-07-03" concatenation artifacts.
+        let pageText = '';
+        let prevItem = null;
+        for (const item of items) {
+          if (!prevItem) {
+            pageText = item.str;
+            prevItem = item;
+            continue;
+          }
+          const prevX = prevItem.transform[4] + (prevItem.width || 0);
+          const currX = item.transform[4];
+          const prevY = prevItem.transform[5];
+          const currY = item.transform[5];
+          const fontSize = Math.abs(item.transform[0]) || 12;
+          const yDiff = Math.abs(currY - prevY);
+          const xGap = currX - prevX;
+
+          if (yDiff > fontSize * 0.5) {
+            // Different line — insert newline
+            pageText += '\n';
+          } else if (xGap > fontSize * 0.3) {
+            // Same line but significant horizontal gap — insert space
+            pageText += ' ';
+          }
+          // else: items are adjacent, no separator needed
+
+          pageText += item.str;
+          prevItem = item;
+        }
         fullText += pageText + '\n';
       }
       return fullText;
