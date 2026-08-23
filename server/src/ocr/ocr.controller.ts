@@ -440,42 +440,107 @@ export function extractContractFields(rawText: string) {
   fields.tenantName = bestName;
 
   // ─── PROPERTY DETAILS ──────────────────────────────────────────────────
+  const FORBIDDEN_VALUE_HEADERS = new Set([
+    'zone', 'sector', 'road', 'road name', 'plot', 'plot no', 'plot no.', 'plot address',
+    'onwani', 'onwani address', 'property', 'property no', 'property no.', 'property name',
+    'property type', 'property registration no', 'occupants', 'occupants details',
+    'full name', 'premise', 'premise no', 'premise no.', 'unit', 'unit no', 'unit no.',
+    'unit type', 'unit usage', 'unit reg no', 'unit registration no', 'no of rooms',
+    'no. of rooms', 'rooms', 'area', 'municipality', 'emirates id', 'nationality',
+    'mobile', 'mobile no', 'mobile no.', 'email', 'company name', 'license no',
+    'contact person', 'first party', 'second party', 'lessor', 'tenant',
+    'occupants details full name', 'property type occupants details full name'
+  ]);
+
+  function isForbiddenValue(val: string): boolean {
+    if (!val) return true;
+    const clean = val.trim().toLowerCase().replace(/[:\.\-_]/g, '').replace(/\s+/g, ' ');
+    return FORBIDDEN_VALUE_HEADERS.has(clean) || clean.startsWith('property type') || clean.startsWith('occupants details');
+  }
+
+  // Municipality
+  let muni = '';
   const muniM = pc.match(new RegExp(`Municipality${SEP}([A-Za-z\\s]+?)(?=\\s*Zone|\\s*Sector|\\s*Plot|\\s*Road|$)`, 'i'));
-  fields.municipality = muniM?.[1]?.trim() || '';
-  if (!fields.municipality) {
+  if (muniM?.[1]?.trim() && !isForbiddenValue(muniM[1])) muni = muniM[1].trim();
+  if (!muni) {
     const mlMuni = multiLineScan(propertySection, /^\s*Municipality\s*$/i);
-    if (mlMuni) fields.municipality = mlMuni.trim();
+    if (mlMuni && !isForbiddenValue(mlMuni)) muni = mlMuni.trim();
   }
+  if (!muni) {
+    const knownMuni = c.match(/\b(Abu\s*Dhabi\s*City|Al\s*Ain\s*City|Al\s*Dhafrah|Abu\s*Dhabi|Al\s*Ain)\b/i);
+    if (knownMuni) muni = knownMuni[1].trim();
+  }
+  fields.municipality = muni || 'Abu Dhabi City';
 
+  // Zone
+  let zone = '';
   const zoneM = pc.match(new RegExp(`Zone${SEP}([A-Za-z\\s]+?)(?=\\s*Sector|\\s*Plot|\\s*Road|\\s*Municipality|$)`, 'i'));
-  fields.zone = zoneM?.[1]?.trim() || '';
-  if (!fields.zone) {
+  if (zoneM?.[1]?.trim() && !isForbiddenValue(zoneM[1])) zone = zoneM[1].trim();
+  if (!zone) {
     const mlZone = multiLineScan(propertySection, /^\s*Zone\s*$/i);
-    if (mlZone) fields.zone = mlZone.trim();
+    if (mlZone && !isForbiddenValue(mlZone)) zone = mlZone.trim();
   }
+  if (!zone) {
+    const knownZone = c.match(/\b(Mohamed\s*Bin\s*Zayed\s*City|Al\s*Reem\s*Island|Khalifa\s*City|Al\s*Maryah\s*Island|Yas\s*Island|Saadiyat\s*Island|Al\s*Raha\s*Beach|Musaffah|Al\s*Bateen|Al\s*Danah|Al\s*Zahiyah|Al\s*Khalidiyah|Al\s*Karamah|Al\s*Muroor|Al\s*Rawdah|Al\s*Reef|Downtown)\b/i);
+    if (knownZone) zone = knownZone[1].trim();
+  }
+  fields.zone = zone;
 
+  // Sector
+  let sector = '';
   const sectorM = pc.match(new RegExp(`Sector${SEP}([A-Za-z0-9\\s\\-]+?)(?=\\s*Plot|\\s*Road|\\s*Zone|\\s*Municipality|\\s*Property|$)`, 'i'));
-  fields.sector = sectorM?.[1]?.trim() || '';
-  if (!fields.sector) {
+  if (sectorM?.[1]?.trim() && !isForbiddenValue(sectorM[1])) sector = sectorM[1].trim();
+  if (!sector) {
     const mlSector = multiLineScan(propertySection, /^\s*Sector\s*$/i);
-    if (mlSector) fields.sector = mlSector.trim();
+    if (mlSector && !isForbiddenValue(mlSector)) sector = mlSector.trim();
   }
-
-  const plotM = pc.match(new RegExp(`Plot\\s*No\\.?${SEP}([A-Za-z0-9\\-]+)`, 'i'));
-  fields.plot = plotM?.[1]?.trim() || '';
-  if (!fields.plot) {
-    const mlPlot = multiLineScan(propertySection, /^\s*Plot\s*(?:No\.?)?\s*$/i);
-    if (mlPlot) fields.plot = mlPlot.trim();
+  if (!sector) {
+    const knownSector = c.match(/\b(ME\d+|E\d+|C\d+|W\d+|Sector\s*\d+|[A-Z]{1,3}\d{1,4})\b/i);
+    if (knownSector && !isForbiddenValue(knownSector[1])) sector = knownSector[1].trim();
   }
+  fields.sector = sector;
 
+  // Plot Address
+  let plotAddr = '';
   const plotAddrM = pc.match(new RegExp(`Plot\\s*Address${SEP}([A-Z0-9\\-\\/\\.]+)`, 'i'));
-  fields.plotAddress = plotAddrM?.[1]?.trim() || '';
+  if (plotAddrM?.[1]?.trim() && !isForbiddenValue(plotAddrM[1]) && /\d{3}-\d{3}/.test(plotAddrM[1])) {
+    plotAddr = plotAddrM[1].trim();
+  }
+  if (!plotAddr) {
+    const knownPlotAddr = c.match(/\b(\d{3}-\d{3}-\d{3}-[A-Z0-9]+)\b/);
+    if (knownPlotAddr) plotAddr = knownPlotAddr[1].trim();
+  }
+  fields.plotAddress = plotAddr;
 
+  // Plot No
+  let plot = '';
+  const plotM = pc.match(new RegExp(`Plot\\s*No\\.?${SEP}([A-Za-z0-9\\-]+)`, 'i'));
+  if (plotM?.[1]?.trim() && !isForbiddenValue(plotM[1])) plot = plotM[1].trim();
+  if (!plot) {
+    const mlPlot = multiLineScan(propertySection, /^\s*Plot\s*(?:No\.?)?\s*$/i);
+    if (mlPlot && !isForbiddenValue(mlPlot)) plot = mlPlot.trim();
+  }
+  if (!plot && fields.plotAddress) {
+    const parts = fields.plotAddress.split('-');
+    plot = parts[parts.length - 1];
+  }
+  if (!plot) {
+    const knownPlot = c.match(/\b([A-Z]\d{2,5})\b/);
+    if (knownPlot && !isForbiddenValue(knownPlot[1])) plot = knownPlot[1].trim();
+  }
+  fields.plot = plot;
+
+  // Property Name
+  let rawPropName = '';
   const propNameM = pc.match(new RegExp(`Property\\s*Name${SEP}([A-Za-z0-9][A-Za-z0-9\\s\\-\\.]{2,59}?)(?=\\s{2,}|\\s*Property\\s*Type|\\s*Municipality|\\s*Zone|\\s*Building|\\s*Plot|$)`, 'i'));
-  let rawPropName = propNameM?.[1]?.trim() || '';
+  if (propNameM?.[1]?.trim() && !isForbiddenValue(propNameM[1])) rawPropName = propNameM[1].trim();
   if (!rawPropName) {
     const mlPropName = multiLineScan(propertySection, /^\s*Property\s*Name\s*$/i);
-    if (mlPropName) rawPropName = mlPropName.trim();
+    if (mlPropName && !isForbiddenValue(mlPropName)) rawPropName = mlPropName.trim();
+  }
+  if (!rawPropName) {
+    const knownProp = c.match(/\b([A-Z][a-zA-Z0-9\s]{2,40}?\s*(?:properties|tower|building|residence|complex|center|plaza|suites|villas|heights))\b/i);
+    if (knownProp && !isForbiddenValue(knownProp[1])) rawPropName = knownProp[1].trim();
   }
   // Deduplicate if same value repeated (multi-column PDF artifact)
   const halfLen = Math.floor(rawPropName.length / 2);
@@ -483,8 +548,8 @@ export function extractContractFields(rawText: string) {
   fields.propertyName = (propHalf && rawPropName.slice(halfLen).trim().toLowerCase() === propHalf.toLowerCase())
     ? propHalf : rawPropName;
 
-  const propTypeM = c.match(new RegExp(`Property\\s*Type${SEP}([A-Z]+)`, 'i'));
-  fields.propertyType = propTypeM?.[1] || 'BUILDING';
+  const propTypeM = c.match(/\bProperty\s*Type[\s:.]*(BUILDING|VILLA|TOWER|COMPLEX|LAND|COMMERCIAL)\b/i) || c.match(/\b(BUILDING|VILLA|TOWER|COMPLEX)\b/i);
+  fields.propertyType = propTypeM?.[1]?.toUpperCase() || 'BUILDING';
 
   // ─── UNITS DETAILS ─────────────────────────────────────────────────────
   // Premise — regex + multi-line
@@ -513,6 +578,25 @@ export function extractContractFields(rawText: string) {
     const mlRooms = multiLineScan(unitsSection, /^\s*No\.?\s*of\s*[Rr]ooms?\s*$/i);
     const roomMatch = mlRooms.match(/(\d+)/);
     if (roomMatch) fields.rooms = parseInt(roomMatch[1], 10);
+  }
+  if (fields.rooms === null) {
+    const genericRooms = text.match(/No\.?\s*of\s*[Rr]ooms?[\s\S]{0,30}?(\d+)/i) || c.match(/No\.?\s*of\s*[Rr]ooms?[\s:.]*(\d+)/i);
+    if (genericRooms) fields.rooms = parseInt(genericRooms[1], 10);
+  }
+
+  // Auto-fill term if missing but dates present
+  if (!fields.term) {
+    if (fields.startDate && fields.endDate) {
+      const s = new Date(fields.startDate);
+      const e = new Date(fields.endDate);
+      const diffMonths = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24 * 30.4375));
+      if (diffMonths >= 11 && diffMonths <= 13) fields.term = '1 Year';
+      else if (diffMonths >= 23 && diffMonths <= 25) fields.term = '2 Years';
+      else if (diffMonths > 0) fields.term = `${diffMonths} Months`;
+      else fields.term = '1 Year';
+    } else {
+      fields.term = '1 Year';
+    }
   }
 
   // Unit type — regex + multi-line
