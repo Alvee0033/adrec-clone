@@ -835,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Optimistically update local cache and table UI instantly
       contractsCache[number] = { ...(contractsCache[number] || {}), ...payload };
-      renderContractsTable(contractsCache);
+      renderTable(contractsCache);
       updateMetrics(contractsCache);
 
       // Instant UI switch to list view
