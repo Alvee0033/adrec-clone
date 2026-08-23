@@ -19,6 +19,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Install native OCR & PDF rendering dependencies (pdftoppm, tesseract)
+RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-ara fontconfig ghostscript
+
 # Copy production packages and files
 COPY server/package*.json ./server/
 RUN cd server && npm ci --only=production
