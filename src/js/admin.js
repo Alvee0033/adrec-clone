@@ -836,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Optimistically update local cache and table UI instantly
       contractsCache[number] = { ...(contractsCache[number] || {}), ...payload };
       renderTable(contractsCache);
-      updateMetrics(contractsCache);
+      updateStats(contractsCache);
 
       // Instant UI switch to list view
       showToast(`Contract #${number} saved successfully!`, 'success', 3000);
@@ -866,8 +866,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
       }
     } catch (err) {
-      console.error(err);
-      alert('Network error trying to save contract.');
+      console.error('Error saving contract:', err);
+      alert('Error saving contract: ' + (err.message || 'Network failure'));
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
