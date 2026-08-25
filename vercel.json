@@ -34,8 +34,12 @@
       "destination": "/pages/admin/login.html"
     },
     {
-      "source": "/services.html",
-      "destination": "/pages/site/services.html"
+      "source": "/verify",
+      "destination": "/pages/site/verify.html"
+    },
+    {
+      "source": "/verify/",
+      "destination": "/pages/site/verify.html"
     },
     {
       "source": "/verify.html",
@@ -50,28 +54,96 @@
       "destination": "/pages/site/verify.html"
     },
     {
+      "source": "/services",
+      "destination": "/pages/site/services.html"
+    },
+    {
+      "source": "/services/",
+      "destination": "/pages/site/services.html"
+    },
+    {
+      "source": "/services.html",
+      "destination": "/pages/site/services.html"
+    },
+    {
+      "source": "/sectors",
+      "destination": "/pages/site/sectors.html"
+    },
+    {
+      "source": "/sectors/",
+      "destination": "/pages/site/sectors.html"
+    },
+    {
       "source": "/sectors.html",
       "destination": "/pages/site/sectors.html"
+    },
+    {
+      "source": "/market-data",
+      "destination": "/pages/site/market-data.html"
+    },
+    {
+      "source": "/market-data/",
+      "destination": "/pages/site/market-data.html"
     },
     {
       "source": "/market-data.html",
       "destination": "/pages/site/market-data.html"
     },
     {
+      "source": "/rules-and-regulations",
+      "destination": "/pages/site/rules-and-regulations.html"
+    },
+    {
+      "source": "/rules-and-regulations/",
+      "destination": "/pages/site/rules-and-regulations.html"
+    },
+    {
       "source": "/rules-and-regulations.html",
       "destination": "/pages/site/rules-and-regulations.html"
+    },
+    {
+      "source": "/media-centre",
+      "destination": "/pages/site/media-centre.html"
+    },
+    {
+      "source": "/media-centre/",
+      "destination": "/pages/site/media-centre.html"
     },
     {
       "source": "/media-centre.html",
       "destination": "/pages/site/media-centre.html"
     },
     {
+      "source": "/media",
+      "destination": "/pages/site/media.html"
+    },
+    {
+      "source": "/media/",
+      "destination": "/pages/site/media.html"
+    },
+    {
       "source": "/media.html",
       "destination": "/pages/site/media.html"
     },
     {
+      "source": "/directory",
+      "destination": "/pages/site/directory.html"
+    },
+    {
+      "source": "/directory/",
+      "destination": "/pages/site/directory.html"
+    },
+    {
       "source": "/directory.html",
       "destination": "/pages/site/directory.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/pages/site/contact.html"
+    },
+    {
+      "source": "/contact/",
+      "destination": "/pages/site/contact.html"
     },
     {
       "source": "/contact.html",
