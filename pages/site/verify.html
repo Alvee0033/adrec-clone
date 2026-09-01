@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="/src/styles/verify.css" />
   <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
   <script type="module" src="/src/js/main.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -169,8 +168,23 @@
         </div>
 
         <!-- Captcha -->
-        <div class="captcha-container" id="captchaContainer" style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1.5rem;">
-          <div class="g-recaptcha" data-sitekey="6LeAmXAtAAAAANra-kOMMtZM1zWWRHtK2aXDUe1L"></div>
+        <div class="captcha-container" id="captchaContainer">
+          <div class="captcha-box" id="captchaBox">
+            <label class="captcha-checkbox-label" id="captchaLabel">
+              <input type="checkbox" id="captchaCheckbox" class="captcha-checkbox">
+              <span class="captcha-custom-box" id="captchaCustomBox"></span>
+              <span class="captcha-text">I'm not a robot</span>
+            </label>
+            <div class="captcha-logo">
+              <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA" width="32" height="32">
+              <span class="captcha-brand">reCAPTCHA</span>
+              <div class="captcha-links">
+                <a href="https://www.google.com/intl/en/policies/privacy/" target="_blank" rel="noopener">Privacy</a> - 
+                <a href="https://www.google.com/intl/en/policies/terms/" target="_blank" rel="noopener">Terms</a>
+              </div>
+            </div>
+          </div>
+          <div id="captchaErrorText" style="color: #ef4444; font-size: 13px; margin-top: 6px; display: none;">Please check the Captcha box to proceed.</div>
         </div>
 
         <!-- Verification Success Container (Initially Hidden) -->
@@ -241,11 +255,31 @@
         document.addEventListener('DOMContentLoaded', () => {
           const verifyFormCard = document.getElementById('verifyFormCard');
           const captchaContainer = document.getElementById('captchaContainer');
+          const captchaBox = document.getElementById('captchaBox');
+          const captchaCheckbox = document.getElementById('captchaCheckbox');
+          const captchaCustomBox = document.getElementById('captchaCustomBox');
+          const captchaErrorText = document.getElementById('captchaErrorText');
           const verifySuccessCard = document.getElementById('verifySuccessCard');
           const verifyBtn = document.querySelector('.btn-verify-submit');
           const contractInput = document.querySelector('.verify-input');
-          
           const verifyErrorText = document.getElementById('verifyErrorText');
+
+          // Realistic captcha click animation
+          if (captchaCheckbox && captchaCustomBox) {
+            captchaCheckbox.addEventListener('change', () => {
+              if (captchaCheckbox.checked) {
+                captchaCustomBox.classList.add('spinning');
+                setTimeout(() => {
+                  captchaCustomBox.classList.remove('spinning');
+                  captchaCustomBox.classList.add('checked');
+                  if (captchaErrorText) captchaErrorText.style.display = 'none';
+                  if (captchaBox) captchaBox.style.borderColor = '#d3d3d3';
+                }, 350);
+              } else {
+                captchaCustomBox.classList.remove('checked', 'spinning');
+              }
+            });
+          }
 
           if (verifyBtn && verifySuccessCard) {
             verifyBtn.addEventListener('click', async (e) => {
@@ -255,9 +289,12 @@
                 alert('Please enter a contract number');
                 return;
               }
-              const captchaResponse = grecaptcha.getResponse();
-              if (!captchaResponse) {
-                alert('Please complete the Captcha to proceed');
+              if (!captchaCheckbox.checked) {
+                if (captchaErrorText) captchaErrorText.style.display = 'block';
+                if (captchaBox) {
+                  captchaBox.style.borderColor = '#ef4444';
+                  captchaBox.style.boxShadow = '0 0 6px rgba(239, 68, 68, 0.2)';
+                }
                 return;
               }
               
@@ -267,11 +304,11 @@
               verifyBtn.style.cursor = 'not-allowed';
               if (verifyErrorText) {
                 verifyErrorText.style.display = 'none';
-                verifyErrorText.textContent = 'Contract not found.'; // reset text in case it changed
+                verifyErrorText.textContent = 'Contract not found.';
               }
               
               try {
-                const response = await fetch(`/api/contracts/${inputNum}`);
+                const response = await fetch(`/api/contracts/${encodeURIComponent(inputNum)}`);
 
                 if (!response.ok) {
                   if (verifyErrorText) verifyErrorText.style.display = 'block';
@@ -332,11 +369,17 @@
             if (anotherBtn) {
               anotherBtn.addEventListener('click', () => {
                 contractInput.value = '';
-                grecaptcha.reset();
+                captchaCheckbox.checked = false;
+                captchaCustomBox.classList.remove('checked', 'spinning');
+                if (captchaErrorText) captchaErrorText.style.display = 'none';
+                if (captchaBox) {
+                  captchaBox.style.borderColor = '#d3d3d3';
+                  captchaBox.style.boxShadow = '0 0 4px rgba(0,0,0,0.08)';
+                }
                 if (verifyErrorText) verifyErrorText.style.display = 'none';
                 
                 verifyFormCard.style.display = 'block';
-                captchaContainer.style.display = 'block';
+                captchaContainer.style.display = 'flex';
                 verifySuccessCard.style.display = 'none';
               });
             }
