@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/src/styles/verify.css" />
   <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
   <script type="module" src="/src/js/main.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js?render=6Lf8ZKMtAAAAAE5Knq10sqB5J3ENs1Bhn1vfdE-5" async defer></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -166,10 +166,10 @@
           </div>
         </div>
 
-
-        <!-- reCAPTCHA v3 hidden token -->
-        <input type="hidden" id="recaptchaToken" name="recaptchaToken" value="">
-
+        <!-- reCAPTCHA v2 Checkbox -->
+        <div class="captcha-container" id="captchaContainer" style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1.5rem;">
+          <div class="g-recaptcha" data-sitekey="6LehaKMtAAAAAKOR2OH53jMJQyA5G7UaUJvIE5Bc"></div>
+        </div>
 
 
         <!-- Verification Success Container (Initially Hidden) -->
@@ -239,11 +239,11 @@
       <script>
         document.addEventListener('DOMContentLoaded', () => {
           const verifyFormCard = document.getElementById('verifyFormCard');
+          const captchaContainer = document.getElementById('captchaContainer');
           const verifySuccessCard = document.getElementById('verifySuccessCard');
           const verifyBtn = document.querySelector('.btn-verify-submit');
           const contractInput = document.querySelector('.verify-input');
           const verifyErrorText = document.getElementById('verifyErrorText');
-          const recaptchaTokenInput = document.getElementById('recaptchaToken');
 
           if (verifyBtn && verifySuccessCard) {
             verifyBtn.addEventListener('click', async (e) => {
@@ -251,6 +251,13 @@
               const inputNum = contractInput.value.trim();
               if (!inputNum) {
                 alert('Please enter a contract number');
+                return;
+              }
+
+              // v2 checkbox check
+              const captchaResponse = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
+              if (!captchaResponse) {
+                alert('Please complete the reCAPTCHA to proceed');
                 return;
               }
 
@@ -264,18 +271,6 @@
               }
 
               try {
-                // Get reCAPTCHA v3 token invisibly
-                let recaptchaToken = '';
-                if (typeof grecaptcha !== 'undefined' && grecaptcha.execute) {
-                  recaptchaToken = await new Promise((resolve) => {
-                    grecaptcha.ready(async () => {
-                      const token = await grecaptcha.execute('6Lf8ZKMtAAAAAE5Knq10sqB5J3ENs1Bhn1vfdE-5', { action: 'verify_document' });
-                      resolve(token);
-                    });
-                  });
-                }
-                if (recaptchaTokenInput) recaptchaTokenInput.value = recaptchaToken;
-
                 const response = await fetch(`/api/contracts/${encodeURIComponent(inputNum)}`);
 
                 if (!response.ok) {
@@ -300,6 +295,7 @@
                 document.getElementById('res-registered-units').textContent = data.unitRegNo;
 
                 verifyFormCard.style.display = 'none';
+                captchaContainer.style.display = 'none';
                 verifySuccessCard.style.display = 'block';
               } catch (err) {
                 console.error(err);
@@ -331,8 +327,10 @@
             if (anotherBtn) {
               anotherBtn.addEventListener('click', () => {
                 contractInput.value = '';
+                if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
                 if (verifyErrorText) verifyErrorText.style.display = 'none';
                 verifyFormCard.style.display = 'block';
+                captchaContainer.style.display = 'flex';
                 verifySuccessCard.style.display = 'none';
               });
             }
