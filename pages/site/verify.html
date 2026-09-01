@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/src/styles/verify.css" />
   <link rel="icon" href="/assets/icons/logo-dark.svg" type="image/svg+xml" />
   <script type="module" src="/src/js/main.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script src="https://www.google.com/recaptcha/api.js?render=6Lf8ZKMtAAAAAE5Knq10sqB5J3ENs1Bhn1vfdE-5" async defer></script>
 </head>
 <body>
 
@@ -166,10 +166,11 @@
           </div>
         </div>
 
-        <!-- Captcha -->
-        <div class="captcha-container" id="captchaContainer" style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1.5rem;">
-          <div class="g-recaptcha" data-sitekey="6Lf8ZKMtAAAAAE5Knq10sqB5J3ENs1Bhn1vfdE-5"></div>
-        </div>
+
+        <!-- reCAPTCHA v3 hidden token -->
+        <input type="hidden" id="recaptchaToken" name="recaptchaToken" value="">
+
+
 
         <!-- Verification Success Container (Initially Hidden) -->
         <div class="verify-success-card" id="verifySuccessCard" style="display: none;">
@@ -238,11 +239,11 @@
       <script>
         document.addEventListener('DOMContentLoaded', () => {
           const verifyFormCard = document.getElementById('verifyFormCard');
-          const captchaContainer = document.getElementById('captchaContainer');
           const verifySuccessCard = document.getElementById('verifySuccessCard');
           const verifyBtn = document.querySelector('.btn-verify-submit');
           const contractInput = document.querySelector('.verify-input');
           const verifyErrorText = document.getElementById('verifyErrorText');
+          const recaptchaTokenInput = document.getElementById('recaptchaToken');
 
           if (verifyBtn && verifySuccessCard) {
             verifyBtn.addEventListener('click', async (e) => {
@@ -252,12 +253,7 @@
                 alert('Please enter a contract number');
                 return;
               }
-              const captchaResponse = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
-              if (!captchaResponse) {
-                alert('Please complete the Captcha to proceed');
-                return;
-              }
-              
+
               verifyBtn.textContent = 'Verifying...';
               verifyBtn.disabled = true;
               verifyBtn.style.opacity = '0.7';
@@ -266,8 +262,20 @@
                 verifyErrorText.style.display = 'none';
                 verifyErrorText.textContent = 'Contract not found.';
               }
-              
+
               try {
+                // Get reCAPTCHA v3 token invisibly
+                let recaptchaToken = '';
+                if (typeof grecaptcha !== 'undefined' && grecaptcha.execute) {
+                  recaptchaToken = await new Promise((resolve) => {
+                    grecaptcha.ready(async () => {
+                      const token = await grecaptcha.execute('6Lf8ZKMtAAAAAE5Knq10sqB5J3ENs1Bhn1vfdE-5', { action: 'verify_document' });
+                      resolve(token);
+                    });
+                  });
+                }
+                if (recaptchaTokenInput) recaptchaTokenInput.value = recaptchaToken;
+
                 const response = await fetch(`/api/contracts/${encodeURIComponent(inputNum)}`);
 
                 if (!response.ok) {
@@ -277,27 +285,21 @@
 
                 const data = await response.json();
 
-                // Helper function to format date
                 function formatDate(dateStr) {
                   if (!dateStr || !dateStr.includes('-')) return dateStr;
                   const parts = dateStr.split('-');
                   return `${parts[2]}/${parts[1]}/${parts[0]}`;
                 }
 
-                // Set results values
                 const resNum = document.getElementById('res-contract-number');
-                if (resNum) {
-                  resNum.textContent = data.number;
-                }
+                if (resNum) resNum.textContent = data.number;
                 document.getElementById('res-usage-type').textContent = data.type;
                 document.getElementById('res-start-date').textContent = formatDate(data.startDate);
                 document.getElementById('res-end-date').textContent = formatDate(data.endDate);
                 document.getElementById('res-tenant-name').textContent = data.tenantName;
                 document.getElementById('res-registered-units').textContent = data.unitRegNo;
-                
-                // Toggle views
+
                 verifyFormCard.style.display = 'none';
-                captchaContainer.style.display = 'none';
                 verifySuccessCard.style.display = 'block';
               } catch (err) {
                 console.error(err);
@@ -312,7 +314,7 @@
                 verifyBtn.style.cursor = 'pointer';
               }
             });
-            
+
             // Clipboard Copy
             const copyBtn = document.querySelector('.btn-copy-contract');
             if (copyBtn) {
@@ -323,25 +325,21 @@
                 });
               });
             }
-            
-            // Verify another (Success screen retry)
+
+            // Verify Another
             const anotherBtn = document.querySelector('.btn-verify-another');
             if (anotherBtn) {
               anotherBtn.addEventListener('click', () => {
                 contractInput.value = '';
-                if (typeof grecaptcha !== 'undefined') {
-                  grecaptcha.reset();
-                }
                 if (verifyErrorText) verifyErrorText.style.display = 'none';
-                
                 verifyFormCard.style.display = 'block';
-                captchaContainer.style.display = 'flex';
                 verifySuccessCard.style.display = 'none';
               });
             }
           }
         });
       </script>
+
 
   </main>
 
